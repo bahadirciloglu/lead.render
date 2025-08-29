@@ -14,7 +14,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 # Import application components
-# App imported successfully
+from main import app
 
 # =============================================================================
 # TEST CONFIGURATION
