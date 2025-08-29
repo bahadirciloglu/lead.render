@@ -29,7 +29,12 @@ with patch('supabase_config.supabase_config', mock_supabase_config):
 @pytest.fixture
 def client():
     """Test client for FastAPI application"""
-    return TestClient(app)
+    try:
+        # Try new syntax first
+        return TestClient(app=app)
+    except TypeError:
+        # Fallback to old syntax
+        return TestClient(app)
 
 
 # =============================================================================
