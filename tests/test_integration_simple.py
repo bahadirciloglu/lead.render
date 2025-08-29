@@ -6,13 +6,20 @@
 
 import os
 import sys
+from unittest.mock import patch, MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from main import app
+# Mock Supabase config before importing main
+mock_supabase_config = MagicMock()
+mock_supabase_config.get_client.return_value = MagicMock()
+mock_supabase_config.get_auth.return_value = MagicMock()
+
+with patch('supabase_config.supabase_config', mock_supabase_config):
+    from main import app
 
 # =============================================================================
 # TEST CONFIGURATION
