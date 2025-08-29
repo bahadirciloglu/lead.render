@@ -94,7 +94,6 @@ supabase>=2.0.0
 postgrest>=0.13.0
 
 # Production monitoring
-sentry-sdk[fastapi]==1.40.0
 psutil==5.9.6
 
 # Performance optimization

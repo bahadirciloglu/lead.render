@@ -16,11 +16,11 @@ CI İŞ PAKETLERİ
     INTERNAL MODULE DEPENDENCIES
     IMPORT ERROR SCENARIOS
 
-[ ] Dependency management
+[x] Dependency management
     SECURITY & COMPLIANCE
     DEPENDENCY LOCKING & VERSIONING
-    
-[ ] ci.yml
+
+[x] ci.yml
 
 
 
