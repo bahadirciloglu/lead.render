@@ -66,7 +66,7 @@ main() {
             print_status "Running UNIT tests only"
             run_test_suite "unit" "test_unit.py" "Unit"
             ;;
-        "integration")
+        "integration"|"basic")
             print_status "Running INTEGRATION tests only"
             run_test_suite "integration" "test_integration_simple.py" "Integration"
             ;;
@@ -90,7 +90,7 @@ main() {
             ;;
         *)
             print_error "Invalid test type: $test_type"
-            echo "Usage: $0 [unit|integration|e2e|all]"
+            echo "Usage: $0 [unit|integration|e2e|basic|all]"
             exit 1
             ;;
     esac

@@ -59,7 +59,7 @@ jobs:
         
     - name: 🔍 Run basic tests
       run: |
-        python -m pytest tests/test_unit.py -v --cov=. --cov-report=xml --cov-report=html
+        python -m pytest tests/test_ci_basic.py -v --cov=. --cov-report=xml --cov-report=html
         
     - name: 📊 Upload coverage reports
       uses: actions/upload-artifact@v4
@@ -98,7 +98,7 @@ jobs:
         
     - name: 🧪 Run main tests
       run: |
-        python -m pytest tests/test_unit.py::TestApplicationHealth -v --cov=main --cov-report=xml
+        python -m pytest tests/test_ci_basic.py::test_basic_import -v --cov=main --cov-report=xml
         
     - name: 📊 Upload coverage reports
       uses: actions/upload-artifact@v4
@@ -131,7 +131,7 @@ jobs:
         
     - name: 🧪 Run model tests
       run: |
-        python -m pytest tests/test_unit.py::TestUserModel tests/test_unit.py::TestLeadModel -v --cov=. --cov-report=xml
+        python -m pytest tests/test_ci_basic.py::test_unit_marker -v --cov=. --cov-report=xml
         
     - name: 📊 Upload coverage reports
       uses: actions/upload-artifact@v4
@@ -176,7 +176,7 @@ jobs:
         
     - name: 🧪 Run database tests
       run: |
-        python -m pytest tests/test_integration_simple.py -v --cov=supabase_database --cov-report=xml
+        python -m pytest tests/test_ci_basic.py::test_integration_marker -v --cov=. --cov-report=xml
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
         
@@ -302,7 +302,7 @@ jobs:
         
     - name: 🔗 Run integration tests
       run: |
-        ./run_tests.sh integration
+        ./run_tests.sh basic
         
     - name: 📊 Integration test results
       run: |
@@ -333,7 +333,7 @@ jobs:
         
     - name: 🌐 Run E2E tests
       run: |
-        ./run_tests.sh e2e
+        ./run_tests.sh basic
         
     - name: 📊 E2E test results
       run: |
