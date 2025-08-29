@@ -62,7 +62,7 @@ jobs:
         python -m pytest tests/test_unit.py -v --cov=. --cov-report=xml --cov-report=html
         
     - name: 📊 Upload coverage reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-reports-basic
         path: |
@@ -101,7 +101,7 @@ jobs:
         python -m pytest tests/test_unit.py::TestApplicationHealth -v --cov=main --cov-report=xml
         
     - name: 📊 Upload coverage reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-reports-main
         path: coverage.xml
@@ -134,7 +134,7 @@ jobs:
         python -m pytest tests/test_unit.py::TestUserModel tests/test_unit.py::TestLeadModel -v --cov=. --cov-report=xml
         
     - name: 📊 Upload coverage reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-reports-models
         path: coverage.xml
@@ -181,7 +181,7 @@ jobs:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
         
     - name: 📊 Upload coverage reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-reports-database
         path: coverage.xml
@@ -259,7 +259,7 @@ jobs:
         safety check --json > safety-report.json || true
         
     - name: 📊 Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-reports
         path: |
@@ -385,7 +385,7 @@ jobs:
         echo "## 📅 Generated at: $(date)" >> ci-report.md
         
     - name: 📤 Upload final report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ci-final-report
         path: ci-report.md
