@@ -5,8 +5,8 @@ services:
     env: python
     plan: starter
     buildCommand: |
-      chmod +x build_staging.sh
-      ./build_staging.sh
+      chmod +x build_production.sh
+      ./build_production.sh
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: ENVIRONMENT
@@ -25,6 +25,12 @@ services:
         value: v1
       - key: PORT
         value: 8000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
     healthCheckPath: /health
     numInstances: 1
 
@@ -54,6 +60,12 @@ services:
         value: v1
       - key: PORT
         value: 8000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
     healthCheckPath: /health
     numInstances: 2
 
@@ -63,8 +75,8 @@ services:
     env: python
     plan: starter
     buildCommand: |
-      chmod +x build_staging.sh
-      ./build_staging.sh
+      chmod +x build_production.sh
+      ./build_production.sh
     startCommand: python worker.py
     envVars:
       - key: ENVIRONMENT
@@ -73,4 +85,10 @@ services:
         value: true
       - key: LOG_LEVEL
         value: info
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
     numInstances: 1 

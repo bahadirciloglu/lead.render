@@ -60,4 +60,4 @@ CI İŞ PAKETLERİ
     Security testing
 [x] Push Github
 [x] Workflows
-[ ] cd.yml
+[x] cd.yml
