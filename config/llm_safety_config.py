@@ -4,64 +4,79 @@ LLM Safety Configuration
 Halüsinasyonları engellemek ve gerçek veri sağlamak için yapılandırma
 """
 
-from typing import Dict, List, Any, Optional
-from enum import Enum
 import json
+from enum import Enum
+from typing import Any, Dict, List, Optional
+
 
 class DataMode(Enum):
     """Veri modu tanımları"""
-    REAL_ONLY = "real_only"           # Sadece gerçek veriler
-    MOCKUP_ONLY = "mockup_only"       # Sadece mockup veriler
-    MIXED = "mixed"                   # Karışık (tehlikeli)
-    DISABLED = "disabled"             # LLM devre dışı
+
+    REAL_ONLY = "real_only"  # Sadece gerçek veriler
+    MOCKUP_ONLY = "mockup_only"  # Sadece mockup veriler
+    MIXED = "mixed"  # Karışık (tehlikeli)
+    DISABLED = "disabled"  # LLM devre dışı
+
 
 class SafetyLevel(Enum):
     """Güvenlik seviyesi"""
-    STRICT = "strict"                 # En katı kontrol
-    MODERATE = "moderate"             # Orta seviye kontrol
-    PERMISSIVE = "permissive"         # Gevşek kontrol
+
+    STRICT = "strict"  # En katı kontrol
+    MODERATE = "moderate"  # Orta seviye kontrol
+    PERMISSIVE = "permissive"  # Gevşek kontrol
+
 
 class LLMSafetyConfig:
     """LLM güvenlik yapılandırması"""
-    
+
     def __init__(self):
         self.data_mode = DataMode.REAL_ONLY
         self.safety_level = SafetyLevel.STRICT
         self.enable_hallucination_detection = True
         self.enable_fact_checking = True
         self.enable_mockup_warnings = True
-        
+
         # Halüsinasyon tespiti için anahtar kelimeler
         self.hallucination_indicators = [
-            "fictional", "example", "sample", "demo", "test",
-            "placeholder", "mock", "fake", "hypothetical",
-            "imaginary", "simulated", "prototype", "template"
+            "fictional",
+            "example",
+            "sample",
+            "demo",
+            "test",
+            "placeholder",
+            "mock",
+            "fake",
+            "hypothetical",
+            "imaginary",
+            "simulated",
+            "prototype",
+            "template",
         ]
-        
+
         # Gerçek veri gereksinimleri
         self.real_data_requirements = {
             "company_name": {
                 "required": True,
                 "validation": "must_exist_online",
-                "sources": ["crunchbase", "linkedin", "official_website"]
+                "sources": ["crunchbase", "linkedin", "official_website"],
             },
             "founder_info": {
                 "required": True,
                 "validation": "linkedin_profile_exists",
-                "sources": ["linkedin", "crunchbase", "company_website"]
+                "sources": ["linkedin", "crunchbase", "company_website"],
             },
             "funding_info": {
                 "required": False,
                 "validation": "public_records",
-                "sources": ["crunchbase", "pitchbook", "sec_filings"]
+                "sources": ["crunchbase", "pitchbook", "sec_filings"],
             },
             "contact_info": {
                 "required": True,
                 "validation": "publicly_available",
-                "sources": ["company_website", "business_directories"]
-            }
+                "sources": ["company_website", "business_directories"],
+            },
         }
-        
+
         # Mockup veri şablonları (geliştirme için)
         self.mockup_templates = {
             "company_card": {
@@ -69,10 +84,10 @@ class LLMSafetyConfig:
                 "founder": "[MOCKUP] John Doe, CEO",
                 "email": "[MOCKUP] contact@example.com",
                 "website": "[MOCKUP] https://example-company.com",
-                "warning": "⚠️ Bu mockup veridir, gerçek şirket bilgisi değildir"
+                "warning": "⚠️ Bu mockup veridir, gerçek şirket bilgisi değildir",
             }
         }
-        
+
         # Güvenli prompt şablonları
         self.safe_prompts = {
             "strict_real_data": """
@@ -94,7 +109,6 @@ VERIFICATION REQUIREMENTS:
 If you cannot meet these requirements, respond with:
 "Unable to provide verified company data for the specified criteria. Please use external data sources or adjust your search parameters."
 """,
-            
             "mockup_development": """
 DEVELOPMENT MODE - MOCKUP DATA ONLY:
 
@@ -114,7 +128,6 @@ Email: [MOCKUP] contact@example.com
 Website: [MOCKUP] https://mockup-company.example.com
 ⚠️ This is mockup data for development purposes
 """,
-            
             "data_analysis_only": """
 ANALYSIS MODE - NO COMPANY DATA:
 
@@ -133,7 +146,7 @@ DO NOT PROVIDE:
 - Specific funding information
 
 Use aggregated data and general market insights only.
-"""
+""",
         }
 
     def get_prompt_for_mode(self, data_mode: DataMode) -> str:
@@ -144,7 +157,7 @@ Use aggregated data and general market insights only.
             return self.safe_prompts["mockup_development"]
         else:
             return self.safe_prompts["data_analysis_only"]
-    
+
     def validate_response(self, response: str, data_mode: DataMode) -> Dict[str, Any]:
         """LLM yanıtını doğrula"""
         validation_result = {
@@ -152,34 +165,43 @@ Use aggregated data and general market insights only.
             "warnings": [],
             "errors": [],
             "safety_score": 100,
-            "data_mode_compliance": True
+            "data_mode_compliance": True,
         }
-        
+
         # Halüsinasyon tespiti
         if self.enable_hallucination_detection:
             for indicator in self.hallucination_indicators:
                 if indicator.lower() in response.lower():
-                    validation_result["warnings"].append(f"Possible hallucination indicator: '{indicator}'")
+                    validation_result["warnings"].append(
+                        f"Possible hallucination indicator: '{indicator}'"
+                    )
                     validation_result["safety_score"] -= 10
-        
+
         # Veri modu uyumluluğu kontrolü
         if data_mode == DataMode.REAL_ONLY:
-            if any(mockup_indicator in response.lower() for mockup_indicator in ["[mockup]", "example.com", "fictional"]):
-                validation_result["errors"].append("Real data mode but mockup indicators found")
+            if any(
+                mockup_indicator in response.lower()
+                for mockup_indicator in ["[mockup]", "example.com", "fictional"]
+            ):
+                validation_result["errors"].append(
+                    "Real data mode but mockup indicators found"
+                )
                 validation_result["data_mode_compliance"] = False
                 validation_result["is_valid"] = False
-        
+
         elif data_mode == DataMode.MOCKUP_ONLY:
             if "[MOCKUP]" not in response and "mockup" not in response.lower():
-                validation_result["warnings"].append("Mockup mode but no mockup indicators found")
+                validation_result["warnings"].append(
+                    "Mockup mode but no mockup indicators found"
+                )
                 validation_result["safety_score"] -= 20
-        
+
         # Güvenlik skoru hesaplama
         if validation_result["safety_score"] < 70:
             validation_result["is_valid"] = False
-        
+
         return validation_result
-    
+
     def get_fallback_response(self, data_mode: DataMode, request_type: str) -> str:
         """Güvenli fallback yanıtı"""
         if data_mode == DataMode.REAL_ONLY:
@@ -199,7 +221,7 @@ For real company data, please consult:
 - Official company websites for contact information
 - SEC filings for public company data
 """
-        
+
         elif data_mode == DataMode.MOCKUP_ONLY:
             return """
 [MOCKUP] Development Data Sample:
@@ -214,9 +236,10 @@ Funding: [MOCKUP] $2M Seed Round
 ⚠️ This is mockup data for development and testing purposes only.
 ⚠️ Do not use this information for actual business decisions.
 """
-        
+
         else:
             return "LLM service is currently disabled or in analysis-only mode."
+
 
 # Global yapılandırma instance'ı
 safety_config = LLMSafetyConfig()
