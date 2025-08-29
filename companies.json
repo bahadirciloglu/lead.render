@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "name": "Curl Test Company Ltd",
+    "industry": "Technology",
+    "location": "Istanbul, Turkey",
+    "company_size": null,
+    "funding_stage": null,
+    "website": "curltestcompany.com",
+    "founder": null,
+    "added_manually": true,
+    "timestamp": "2025-08-26 19:11:35.120946"
+  }
+]

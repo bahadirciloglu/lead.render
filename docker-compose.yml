@@ -1,0 +1,176 @@
+# =============================================================================
+# LEAD DISCOVERY API - DOCKER COMPOSE
+# =============================================================================
+# Multi-environment deployment configuration
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # STAGING ENVIRONMENT
+  # =============================================================================
+  lead-api-staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: lead-discovery-api:staging
+    container_name: lead-api-staging
+    environment:
+      - ENVIRONMENT=staging
+      - DEBUG=true
+      - LOG_LEVEL=debug
+      - PORT=8000
+    env_file:
+      - .env.staging
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./build/staging:/app/build/staging
+    networks:
+      - lead-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # =============================================================================
+  # PRODUCTION ENVIRONMENT
+  # =============================================================================
+  lead-api-production:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: lead-discovery-api:production
+    container_name: lead-api-production
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - LOG_LEVEL=info
+      - PORT=8000
+    env_file:
+      - .env.production
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./build/production:/app/build/production
+    networks:
+      - lead-network
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # =============================================================================
+  # BACKGROUND WORKER
+  # =============================================================================
+  lead-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: lead-discovery-api:worker
+    container_name: lead-worker
+    environment:
+      - ENVIRONMENT=staging
+      - WORKER_MODE=true
+      - LOG_LEVEL=info
+    env_file:
+      - .env.staging
+    volumes:
+      - ./logs:/app/logs
+      - ./build/staging:/app/build/staging
+    networks:
+      - lead-network
+    restart: unless-stopped
+    command: ["python", "worker.py"]
+    depends_on:
+      - lead-api-staging
+
+  # =============================================================================
+  # REDIS CACHE (Optional)
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: lead-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - lead-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # =============================================================================
+  # POSTGRES DATABASE (Optional - for local development)
+  # =============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: lead-postgres
+    environment:
+      - POSTGRES_DB=lead_discovery
+      - POSTGRES_USER=lead_user
+      - POSTGRES_PASSWORD=lead_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - lead-network
+    restart: unless-stopped
+
+  # =============================================================================
+  # NGINX REVERSE PROXY (Optional)
+  # =============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: lead-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - lead-network
+    restart: unless-stopped
+    depends_on:
+      - lead-api-production
+      - lead-api-staging
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  redis-data:
+  postgres-data:
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  lead-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16 

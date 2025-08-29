@@ -1,0 +1,76 @@
+services:
+  # Staging Environment
+  - type: web
+    name: lead-discovery-api-staging
+    env: python
+    plan: starter
+    buildCommand: |
+      chmod +x build_staging.sh
+      ./build_staging.sh
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: staging
+      - key: DEBUG
+        value: true
+      - key: LOG_LEVEL
+        value: debug
+      - key: NODE_ENV
+        value: staging
+      - key: APP_NAME
+        value: Lead Discovery API (Staging)
+      - key: APP_VERSION
+        value: 2.0.0
+      - key: API_VERSION
+        value: v1
+      - key: PORT
+        value: 8000
+    healthCheckPath: /health
+    numInstances: 1
+
+  # Production Environment
+  - type: web
+    name: lead-discovery-api-production
+    env: python
+    plan: starter
+    buildCommand: |
+      chmod +x build_production.sh
+      ./build_production.sh
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: info
+      - key: NODE_ENV
+        value: production
+      - key: APP_NAME
+        value: Lead Discovery API (Production)
+      - key: APP_VERSION
+        value: 2.0.0
+      - key: API_VERSION
+        value: v1
+      - key: PORT
+        value: 8000
+    healthCheckPath: /health
+    numInstances: 2
+
+  # Background Worker
+  - type: worker
+    name: lead-discovery-worker
+    env: python
+    plan: starter
+    buildCommand: |
+      chmod +x build_staging.sh
+      ./build_staging.sh
+    startCommand: python worker.py
+    envVars:
+      - key: ENVIRONMENT
+        value: staging
+      - key: WORKER_MODE
+        value: true
+      - key: LOG_LEVEL
+        value: info
+    numInstances: 1 

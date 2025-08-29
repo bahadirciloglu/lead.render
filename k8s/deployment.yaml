@@ -1,0 +1,298 @@
+# =============================================================================
+# LEAD DISCOVERY API - KUBERNETES DEPLOYMENT
+# =============================================================================
+# Production-ready Kubernetes manifests
+# =============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lead-discovery
+  labels:
+    name: lead-discovery
+    environment: production
+
+---
+# =============================================================================
+# CONFIGMAP
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lead-api-config
+  namespace: lead-discovery
+data:
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "info"
+  PORT: "8000"
+  WORKER_PROCESSES: "4"
+  WORKER_CONNECTIONS: "1000"
+  MAX_REQUESTS: "1000"
+  MAX_REQUESTS_JITTER: "100"
+
+---
+# =============================================================================
+# SECRET
+# =============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: lead-api-secrets
+  namespace: lead-discovery
+type: Opaque
+data:
+  # Base64 encoded values (echo -n "value" | base64)
+  JWT_SECRET_KEY: "eW91ci1wcm9kdWN0aW9uLWp3dC1zZWNyZXQ="
+  SECRET_KEY: "eW91ci1wcm9kdWN0aW9uLXNlY3JldC1rZXk="
+  SUPABASE_KEY: "eW91ci1wcm9kdWN0aW9uLXN1cGFiYXNlLWtleQ=="
+  SUPABASE_SERVICE_ROLE_KEY: "eW91ci1wcm9kdWN0aW9uLXN1cGFiYXNlLXNlcnZpY2Utcm9sZS1rZXk="
+
+---
+# =============================================================================
+# SERVICE
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: lead-api-service
+  namespace: lead-discovery
+  labels:
+    app: lead-discovery-api
+    environment: production
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: 8000
+      protocol: TCP
+      name: https
+  selector:
+    app: lead-discovery-api
+    environment: production
+
+---
+# =============================================================================
+# INGRESS
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lead-api-ingress
+  namespace: lead-discovery
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+spec:
+  tls:
+    - hosts:
+        - api.leaddiscovery.com
+      secretName: lead-api-tls
+  rules:
+    - host: api.leaddiscovery.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lead-api-service
+                port:
+                  number: 80
+
+---
+# =============================================================================
+# DEPLOYMENT
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lead-discovery-api
+  namespace: lead-discovery
+  labels:
+    app: lead-discovery-api
+    environment: production
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: lead-discovery-api
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: lead-discovery-api
+        environment: production
+    spec:
+      containers:
+        - name: lead-api
+          image: ghcr.io/your-username/lead-discovery-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: lead-api-config
+                  key: ENVIRONMENT
+            - name: DEBUG
+              valueFrom:
+                configMapKeyRef:
+                  name: lead-api-config
+                  key: DEBUG
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: lead-api-config
+                  key: LOG_LEVEL
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: lead-api-config
+                  key: PORT
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lead-api-secrets
+                  key: JWT_SECRET_KEY
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lead-api-secrets
+                  key: SECRET_KEY
+            - name: SUPABASE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lead-api-secrets
+                  key: SUPABASE_KEY
+            - name: SUPABASE_SERVICE_ROLE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: lead-api-secrets
+                  key: SUPABASE_SERVICE_ROLE_KEY
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: logs
+              mountPath: /app/logs
+            - name: config
+              mountPath: /app/build/production
+      volumes:
+        - name: logs
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: lead-api-config
+
+---
+# =============================================================================
+# HORIZONTAL POD AUTOSCALER
+# =============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: lead-api-hpa
+  namespace: lead-discovery
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: lead-discovery-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 10
+          periodSeconds: 60
+
+---
+# =============================================================================
+# NETWORK POLICY
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: lead-api-network-policy
+  namespace: lead-discovery
+spec:
+  podSelector:
+    matchLabels:
+      app: lead-discovery-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: lead-discovery
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80 

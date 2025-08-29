@@ -1,0 +1,62 @@
+[
+  {
+    "week": "Hafta 33",
+    "dateRange": "Önceki hafta tarihleri",
+    "currentDay": 1,
+    "currentDayName": "Pazartesi",
+    "sections": {
+      "executive_summary": "Önceki hafta özet bilgileri buraya yazılacak.",
+      "issues_plan": "Önceki hafta sorunlar ve aksiyon planı buraya yazılacak.",
+      "upcoming_hackathons": "Önceki hafta hackathon bilgileri buraya yazılacak.",
+      "lesson_learned": "Önceki hafta öğrenilen dersler buraya yazılacak."
+    }
+  },
+  {
+    "week": "Hafta 34",
+    "dateRange": "Geçen hafta tarihleri",
+    "currentDay": 1,
+    "currentDayName": "Pazartesi",
+    "sections": {
+      "executive_summary": "Geçen hafta özet bilgileri buraya yazılacak.",
+      "issues_plan": "Geçen hafta sorunlar ve aksiyon planı buraya yazılacak.",
+      "upcoming_hackathons": "Geçen hafta hackathon bilgileri buraya yazılacak.",
+      "lesson_learned": "Geçen hafta öğrenilen dersler buraya yazılacak."
+    }
+  },
+  {
+    "week": "Hafta 35",
+    "dateRange": "25 Ağustos 2025 Pazartesi – 31 Ağustos 2025 Pazar",
+    "currentDay": 2,
+    "currentDayName": "Salı",
+    "sections": {
+      "executive_summary": "qloo api 10k lık yarışmaya girildi. Ürün backendi bitti.\nbeeai.world den kartal.ai ya geçildi, tusas accelerator'a kayıt olundu.\nAssembly AI, Algolia MCP, Qloo LLM hackathonlarına girildi.\narmut, bionluk, hackathonlar ile dealflowlar yaratıldı.",
+      "issues_plan": "Bu hafta sorun yaşanmadı.",
+      "upcoming_hackathons": "Kayıt olunan hackathon bilgileri buraya yazılacak",
+      "lesson_learned": "Bu hafta öğrenilen dersler ve deneyimler"
+    }
+  },
+  {
+    "week": "Hafta 36",
+    "dateRange": "Gelecek hafta tarihleri",
+    "currentDay": 1,
+    "currentDayName": "Pazartesi",
+    "sections": {
+      "executive_summary": "Gelecek hafta özet bilgileri buraya yazılacak.",
+      "issues_plan": "Gelecek hafta sorunlar ve aksiyon planı buraya yazılacak.",
+      "upcoming_hackathons": "Gelecek hafta hackathon bilgileri buraya yazılacak.",
+      "lesson_learned": "Gelecek hafta öğrenilen dersler buraya yazılacak."
+    }
+  },
+  {
+    "week": "Hafta 37",
+    "dateRange": "Sonraki hafta tarihleri",
+    "currentDay": 1,
+    "currentDayName": "Pazartesi",
+    "sections": {
+      "executive_summary": "Sonraki hafta özet bilgileri buraya yazılacak.",
+      "issues_plan": "Sonraki hafta sorunlar ve aksiyon planı buraya yazılacak.",
+      "upcoming_hackathons": "Sonraki hafta hackathon bilgileri buraya yazılacak.",
+      "lesson_learned": "Sonraki hafta öğrenilen dersler buraya yazılacak."
+    }
+  }
+]
