@@ -48,6 +48,7 @@ Test Configuration:
     Code coverage
 [x] Test Coverage Workflow
 [x] Security Scan Coverage Workflow
+[ ] ci.yml
 
 
 
@@ -85,5 +86,6 @@ Test Configuration:
     unit, integration, e2e
     CI/CD integration testing
     Security testing
-[ ] Push Github
-[ ] Workflows
+[x] Push Github
+[x] Workflows
+[ ] cd.yml
