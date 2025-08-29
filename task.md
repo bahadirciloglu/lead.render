@@ -1,53 +1,25 @@
-1.CI (CONTINUOUS INTEGRATION) İŞ PAKETLERİ:
-Test Infrastructure Setup:
-[x] Testing Framework Kurulumu:
-[x] pytest kurulumu ve konfigürasyonu
-Tests klasörü oluşturup test dosyaları yazalım?
-Test coverage çalıştıralım?
-[x] pytest-cov coverage için
-[x] pytest-asyncio async test desteği
-[x] httpx API testleri için
-[x] Test Dosyaları Oluşturma:
-[x] tests/ klasörü oluştur
-[x] test_main.py → FastAPI app testleri
-[x] test_api/ → API endpoint testleri
-[x] test_database/ → Database testleri
-[x] test_models/ → Data model testleri
-(BU TESTLER VERİTABANI VE ENV VARIABLES MOCKUP OLARAK KULLANILARAK YAPILDI)
-Test Configuration:
-[x] pytest.ini veya pyproject.toml konfigürasyonu
-[x] Test environment variables
-[x] Coverage thresholds
-[x] Test database setup
-    Code Quality Tools:
-[x] Linting & Formatting:
-[x] flake8 veya pylint kurulumu
-[x] black code formatter
-[x] isort import sorter
-[x] Pre-commit hooks
-    Type Checking:
-[x] mypy type checker
-[x] Type annotations kontrolü
-[x] Stub files oluşturma
-    Security Scanning:
-[x] Dependency Security:
-[x] safety Python security scanner
-[x] bandit security linter
-[x] pip-audit vulnerability check
-    Code Security:
-[x] Secret scanning
-[x] Hardcoded credentials kontrolü
-[x] API security testleri
-[x] Github yükleyelim
-[x] Build Scripts
-    Code commit
-    Linting & Formatting
-    Type checking
-    Security scanning
-    Unit tests
-    Code coverage
-[x] Test Coverage Workflow
-[x] Security Scan Coverage Workflow
+CI İŞ PAKETLERİ
+[x] Code quality checks
+    Python Code Quality
+    CODE STANDARDS & BEST PRACTICES
+    SECURITY & VULNERABILITY CHECKS
+    TESTING & COVERAGE
+
+[x] Basic validation
+    CODE & SYNTAX VALIDATION
+    DEPENDENCY VALIDATION
+    CONFIGURATION VALIDATION
+
+[x] Import testing
+    CORE MODULE IMPORTS
+    EXTERNAL DEPENDENCY IMPORTS
+    INTERNAL MODULE DEPENDENCIES
+    IMPORT ERROR SCENARIOS
+
+[ ] Dependency management
+    SECURITY & COMPLIANCE
+    DEPENDENCY LOCKING & VERSIONING
+    
 [ ] ci.yml
 
 
