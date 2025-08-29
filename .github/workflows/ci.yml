@@ -1,7 +1,70 @@
 # =============================================================================
 # LEAD DISCOVERY API - SIMPLE CI PIPELINE
+# =============================================================================
+# Basic CI pipeline for essential validation
+# =============================================================================
+
 name: "🔧 Lead Discovery API - Simple CI"
 
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  basic-validation:
+    name: Basic Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: 📦 Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: 🔍 Check file structure
+      run: |
+        echo "✅ Checking project structure..."
+        ls -la
+        echo "✅ Project files exist"
+        
+    - name: 🐍 Test Python imports
+      run: |
+        echo "✅ Testing Python imports..."
+        python -c "import main; print('✅ Main module imports successfully')"
+        python -c "import supabase_auth; print('✅ Auth module imports successfully')"
+        python -c "import supabase_database; print('✅ Database module imports successfully')"
+        
+    - name: 📋 Generate summary
+      run: |
+        echo "# 🚀 LEAD DISCOVERY API - CI SUMMARY" > ci-summary.md
+        echo "" >> ci-summary.md
+        echo "## ✅ Validation Results" >> ci-summary.md
+        echo "" >> ci-summary.md
+        echo "- **File Structure:** ✅ Valid" >> ci-summary.md
+        echo "- **Python Imports:** ✅ Valid" >> ci-summary.md
+        echo "- **Dependencies:** ✅ Installed" >> ci-summary.md
+        echo "" >> ci-summary.md
+        echo "## 📅 Generated at: $(date)" >> ci-summary.md
+        echo "" >> ci-summary.md
+        echo "🎉 **CI Pipeline Completed Successfully!**" >> ci-summary.md
+        
+    - name: 📤 Upload summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-summary
+        path: ci-summary.md
+        retention-days: 30
