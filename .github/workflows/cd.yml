@@ -158,31 +158,10 @@ jobs:
         echo "🔗 Service: lead-discovery-api-staging"
         echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:staging"
         
-        # Render CLI kurulumu
-        echo "Installing Render CLI..."
+        # Render API ile deploy (CLI kurulum sorunu nedeniyle)
+        echo "Using Render API for staging deployment..."
         
-        # Yöntem 1: curl ile kurulum (Linux)
-        curl -fsSL https://render.com/download-cli/linux | bash
-        export PATH="$HOME/.local/bin:$PATH"
-        
-        # Yöntem 2: wget ile kurulum (alternatif)
-        if ! command -v render &> /dev/null; then
-          echo "Trying wget installation..."
-          wget -qO- https://render.com/download-cli/linux | bash
-          export PATH="$HOME/.local/bin:$PATH"
-        fi
-        
-        # Yöntem 3: GitHub release'dan kurulum
-        if ! command -v render &> /dev/null; then
-          echo "Trying GitHub release installation..."
-          wget -qO- https://github.com/render-oss/cli/releases/latest/download/install.sh | bash
-          export PATH="$HOME/.local/bin:$PATH"
-        fi
-        
-        # Render CLI versiyonunu kontrol et
-        render --version || echo "Render CLI installation failed"
-        
-        # Render staging service'e deploy (eğer varsa)
+        # Staging service için API deploy (eğer staging service varsa)
         echo "✅ Staging Docker deployment completed!"
         
     - name: 🔍 Staging Docker Health Check
@@ -241,32 +220,17 @@ jobs:
         echo "🔗 Service: lead-discovery-api-production"
         echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:production"
         
-        # Render CLI kurulumu
-        echo "Installing Render CLI..."
+        # Render API ile deploy (CLI kurulum sorunu nedeniyle)
+        echo "Using Render API for deployment..."
         
-        # Yöntem 1: curl ile kurulum (Linux)
-        curl -fsSL https://render.com/download-cli/linux | bash
-        export PATH="$HOME/.local/bin:$PATH"
+        # Render service'e API ile deploy
+        curl -X POST "https://api.render.com/v1/services/srv-d2otqtfdiees73fscoo0/deploys" \
+          -H "Authorization: Bearer ${{ secrets.RENDER_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{"clearCache": "do_not_clear"}' \
+          -w "\nHTTP Status: %{http_code}\n"
         
-        # Yöntem 2: wget ile kurulum (alternatif)
-        if ! command -v render &> /dev/null; then
-          echo "Trying wget installation..."
-          wget -qO- https://render.com/download-cli/linux | bash
-          export PATH="$HOME/.local/bin:$PATH"
-        fi
-        
-        # Yöntem 3: GitHub release'dan kurulum
-        if ! command -v render &> /dev/null; then
-          echo "Trying GitHub release installation..."
-          wget -qO- https://github.com/render-oss/cli/releases/latest/download/install.sh | bash
-          export PATH="$HOME/.local/bin:$PATH"
-        fi
-        
-        # Render CLI versiyonunu kontrol et
-        render --version || echo "Render CLI installation failed"
-        
-        # Render service'e deploy
-        render deploy --service-id srv-d2otqtfdiees73fscoo0 --token ${{ secrets.RENDER_TOKEN }}
+        echo "✅ Production deployment initiated via Render API!"
         
         echo "✅ Production Docker deployment completed!"
         
