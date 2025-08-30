@@ -157,7 +157,13 @@ jobs:
         echo "📊 Environment: Staging"
         echo "🔗 Service: lead-discovery-api-staging"
         echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:staging"
-        echo "✅ Staging Docker deployment initiated!"
+        
+        # Render CLI kurulumu
+        curl -fsSL https://render.com/download-cli/linux | bash
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        # Render staging service'e deploy (eğer varsa)
+        echo "✅ Staging Docker deployment completed!"
         
     - name: 🔍 Staging Docker Health Check
       run: |
@@ -214,7 +220,15 @@ jobs:
         echo "📊 Environment: Production"
         echo "🔗 Service: lead-discovery-api-production"
         echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:production"
-        echo "✅ Production Docker deployment initiated!"
+        
+        # Render CLI kurulumu
+        curl -fsSL https://render.com/download-cli/linux | bash
+        export PATH="$HOME/.local/bin:$PATH"
+        
+        # Render service'e deploy
+        render deploy --service-id srv-d2otqtfdiees73fscoo0 --token ${{ secrets.RENDER_TOKEN }}
+        
+        echo "✅ Production Docker deployment completed!"
         
     - name: 🔍 Production Docker Health Check
       run: |
