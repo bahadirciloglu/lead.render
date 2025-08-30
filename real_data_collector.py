@@ -151,12 +151,26 @@ class RealDataCollector:
                     result = response.json()
                     content = result["choices"][0]["message"]["content"]
                     print(f"🤖 GPT-OSS-20B Response preview: {content[:300]}...")
-                    # Parsing kaldırıldı - direkt LLM yanıtı döndür
+                    
+                    # Clean GPT-OSS-20B response - remove analysis prefixes
+                    cleaned_content = content
+                    if "analysis" in content.lower() and "assistantfinal" in content.lower():
+                        # Extract only the final response after "assistantfinal"
+                        if "assistantfinal" in content:
+                            cleaned_content = content.split("assistantfinal")[-1].strip()
+                        elif "final" in content.lower():
+                            # Try to find content after "final"
+                            final_parts = content.split("final")
+                            if len(final_parts) > 1:
+                                cleaned_content = final_parts[-1].strip()
+                    
+                    print(f"🧹 Cleaned GPT-OSS-20B Response: {cleaned_content[:300]}...")
+                    
                     self._increment_request_count("openrouter")
                     return [
                         {
                             "model": "GPT-OSS-20B",
-                            "llm_response": content,
+                            "llm_response": cleaned_content,
                             "user_question": user_message,
                             "status": "success",
                             "timestamp": datetime.now().isoformat(),
