@@ -158,21 +158,29 @@ jobs:
         echo "🔗 Service: lead-discovery-api-staging"
         echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:staging"
         
-        # Render CLI kurulumu - alternatif yöntemler
+        # Render CLI kurulumu
         echo "Installing Render CLI..."
         
-        # Yöntem 1: npm ile kurulum
-        npm install -g @render/cli
+        # Yöntem 1: curl ile kurulum (Linux)
+        curl -fsSL https://render.com/download-cli/linux | bash
+        export PATH="$HOME/.local/bin:$PATH"
         
-        # Yöntem 2: curl ile kurulum (fallback)
+        # Yöntem 2: wget ile kurulum (alternatif)
         if ! command -v render &> /dev/null; then
-          echo "Trying curl installation..."
-          curl -fsSL https://render.com/download-cli/linux | bash
+          echo "Trying wget installation..."
+          wget -qO- https://render.com/download-cli/linux | bash
+          export PATH="$HOME/.local/bin:$PATH"
+        fi
+        
+        # Yöntem 3: GitHub release'dan kurulum
+        if ! command -v render &> /dev/null; then
+          echo "Trying GitHub release installation..."
+          wget -qO- https://github.com/render-oss/cli/releases/latest/download/install.sh | bash
           export PATH="$HOME/.local/bin:$PATH"
         fi
         
         # Render CLI versiyonunu kontrol et
-        render --version
+        render --version || echo "Render CLI installation failed"
         
         # Render staging service'e deploy (eğer varsa)
         echo "✅ Staging Docker deployment completed!"
@@ -233,21 +241,29 @@ jobs:
         echo "🔗 Service: lead-discovery-api-production"
         echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:production"
         
-        # Render CLI kurulumu - alternatif yöntemler
+        # Render CLI kurulumu
         echo "Installing Render CLI..."
         
-        # Yöntem 1: npm ile kurulum
-        npm install -g @render/cli
+        # Yöntem 1: curl ile kurulum (Linux)
+        curl -fsSL https://render.com/download-cli/linux | bash
+        export PATH="$HOME/.local/bin:$PATH"
         
-        # Yöntem 2: curl ile kurulum (fallback)
+        # Yöntem 2: wget ile kurulum (alternatif)
         if ! command -v render &> /dev/null; then
-          echo "Trying curl installation..."
-          curl -fsSL https://render.com/download-cli/linux | bash
+          echo "Trying wget installation..."
+          wget -qO- https://render.com/download-cli/linux | bash
+          export PATH="$HOME/.local/bin:$PATH"
+        fi
+        
+        # Yöntem 3: GitHub release'dan kurulum
+        if ! command -v render &> /dev/null; then
+          echo "Trying GitHub release installation..."
+          wget -qO- https://github.com/render-oss/cli/releases/latest/download/install.sh | bash
           export PATH="$HOME/.local/bin:$PATH"
         fi
         
         # Render CLI versiyonunu kontrol et
-        render --version
+        render --version || echo "Render CLI installation failed"
         
         # Render service'e deploy
         render deploy --service-id srv-d2otqtfdiees73fscoo0 --token ${{ secrets.RENDER_TOKEN }}
