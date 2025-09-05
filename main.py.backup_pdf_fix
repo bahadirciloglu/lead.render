@@ -87,7 +87,7 @@ def calculate_sales_cycle(pipeline_data: list) -> float:
             return 0.0
 
     except Exception as e:
-        print(f" Sales cycle calculation error: {e}")
+        print(f"❌ Sales cycle calculation error: {e}")
         return 0.0
 
 
@@ -149,11 +149,11 @@ async def jwt_token_validation_middleware(request, call_next):
     ]
 
     # Check if the endpoint requires authentication
-    print(f" Request path: {request.url.path}")
-    print(f" Request method: {request.method}")
+    print(f"🔍 Request path: {request.url.path}")
+    print(f"🔍 Request method: {request.method}")
     
     if any(request.url.path.startswith(endpoint) for endpoint in public_endpoints):
-        print(f" Public endpoint, skipping auth: {request.url.path}")
+        print(f"✅ Public endpoint, skipping auth: {request.url.path}")
         response = await call_next(request)
         return response
 
@@ -246,45 +246,45 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     """Mevcut kullanıcıyı getir"""
     try:
-        print(f" get_current_user called with token: {token[:50]}...")
+        print(f"🔍 get_current_user called with token: {token[:50]}...")
 
         # Token'ı doğrula
         payload = auth_service.verify_token(token)
-        print(f" verify_token result: {payload}")
+        print(f"🔍 verify_token result: {payload}")
 
         if payload is None:  # None kontrolü ekle
-            print(" Payload is None")
+            print("❌ Payload is None")
             raise HTTPException(status_code=401, detail="Invalid token")
 
         if not isinstance(payload, dict):
-            print(f" Payload is not a dict: {type(payload)}")
+            print(f"❌ Payload is not a dict: {type(payload)}")
             raise HTTPException(status_code=401, detail="Invalid token payload")
 
         user_id: str = payload.get("sub")
-        print(f" User ID from payload: {user_id}")
+        print(f"🔍 User ID from payload: {user_id}")
         if user_id is None:
-            print(" User ID is None")
+            print("❌ User ID is None")
             raise HTTPException(status_code=401, detail="Invalid token")
 
         # Kullanıcıyı getir
         user = auth_service.get_user_by_id(user_id)
-        print(f" User from database: {user}")
+        print(f"🔍 User from database: {user}")
         if user is None:
-            print(" User not found in database")
+            print("❌ User not found in database")
             raise HTTPException(status_code=401, detail="User not found")
 
         if not isinstance(user, dict):
-            print(f" User is not a dict: {type(user)}")
+            print(f"❌ User is not a dict: {type(user)}")
             raise HTTPException(status_code=401, detail="Invalid user data")
 
         if not user.get("is_active", False):
-            print(" User is not active")
+            print("❌ User is not active")
             raise HTTPException(status_code=400, detail="Inactive user")
 
-        print(f" User validated successfully: {user.get('email')}")
+        print(f"✅ User validated successfully: {user.get('email')}")
         return user
     except Exception as e:
-        print(f" get_current_user error: {e}")
+        print(f"❌ get_current_user error: {e}")
         import traceback
 
         traceback.print_exc()
@@ -388,14 +388,14 @@ async def startup_event():
 
         # Yapılandırmayı doğrula
         validate_configuration()
-        print(" Configuration validated successfully")
+        print("✅ Configuration validated successfully")
 
         # Veri kaynaklarının durumunu kontrol et
         status = get_data_source_status()
         print(f"📊 Data sources status: {status}")
 
     except Exception as e:
-        print(f" Startup error: {e}")
+        print(f"❌ Startup error: {e}")
         raise e
 
 
@@ -475,7 +475,7 @@ async def setup_admin_user():
             raise HTTPException(status_code=500, detail="Failed to create admin user")
 
     except Exception as e:
-        print(f" Admin setup error: {e}")
+        print(f"❌ Admin setup error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -497,7 +497,7 @@ async def get_admin_users(current_user: dict = Depends(require_admin())):
                 "data": {"users": [], "total_users": 0},
             }
     except Exception as e:
-        print(f" Get admin users error: {e}")
+        print(f"❌ Get admin users error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -545,7 +545,7 @@ async def update_admin_user(
     except HTTPException:
         raise
     except Exception as e:
-        print(f" Update admin user error: {e}")
+        print(f"❌ Update admin user error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -571,7 +571,7 @@ async def delete_admin_user(
     except HTTPException:
         raise
     except Exception as e:
-        print(f" Delete admin user error: {e}")
+        print(f"❌ Delete admin user error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -595,14 +595,14 @@ async def login(credentials: dict):
         auth_result = auth_service.sign_in(email, password)
 
         if auth_result:
-            print(f" Login successful for: {email}")
+            print(f"✅ Login successful for: {email}")
             return {
                 "status": "success",
                 "data": auth_result,
                 "message": "Login successful",
             }
         else:
-            print(f" Login failed for: {email}")
+            print(f"❌ Login failed for: {email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect email or password",
@@ -611,7 +611,7 @@ async def login(credentials: dict):
     except HTTPException:
         raise
     except Exception as e:
-        print(f" Login error: {e}")
+        print(f"❌ Login error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login failed"
         )
@@ -640,7 +640,7 @@ async def register(user_data: dict):
     except HTTPException:
         raise
     except Exception as e:
-        print(f" Registration error: {e}")
+        print(f"❌ Registration error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Registration failed",
@@ -677,7 +677,7 @@ async def change_user_password(
     except HTTPException:
         raise
     except Exception as e:
-        print(f" Change password error: {e}")
+        print(f"❌ Change password error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -687,7 +687,7 @@ async def get_profile(current_user: dict = Depends(get_current_active_user)):
     try:
         return {"status": "success", "user": current_user}
     except Exception as e:
-        print(f" Get profile error: {e}")
+        print(f"❌ Get profile error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -702,7 +702,7 @@ async def chat_with_llm(request: dict):
         default_filters = {"locations": ["Global"], "year": "2024"}
 
         print(f"💬 Chat message from anonymous user: {user_message}")
-        print(f" Using default filters: {default_filters}")
+        print(f"🎯 Using default filters: {default_filters}")
 
         # LLM ile yanıt al
         collection_results = await real_data_collector.collect_startup_data(
@@ -738,7 +738,7 @@ async def chat_with_llm(request: dict):
             print(f"💾 Chat history saved to database with ID: {chat_id}")
 
         except Exception as e:
-            print(f" Warning: Could not save chat history: {e}")
+            print(f"⚠️ Warning: Could not save chat history: {e}")
 
         # LLM response'larını da dahil et
         response = {
@@ -746,7 +746,7 @@ async def chat_with_llm(request: dict):
             "message": f"Chat completed! Found {collection_results.get('total_companies', 0)} companies",
             "llm_responses": len(
                 collection_results.get("llm_analysis", [])
-            ),  #  LLM yanıtları (şirket değil)
+            ),  # ✅ LLM yanıtları (şirket değil)
             "total_companies": collection_results.get("total_companies", 0),
             "llm_analysis": collection_results.get("llm_analysis", []),
         }
@@ -754,7 +754,7 @@ async def chat_with_llm(request: dict):
         return response
 
     except Exception as e:
-        print(f" Chat error: {e}")
+        print(f"❌ Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -771,7 +771,7 @@ async def add_company(company: dict):
             "company_id": company_id,
         }
     except Exception as e:
-        print(f" Add company error: {e}")
+        print(f"❌ Add company error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -797,7 +797,7 @@ async def get_companies():
             "data": {"companies": companies},
         }
     except Exception as e:
-        print(f" Get companies error: {e}")
+        print(f"❌ Get companies error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -814,7 +814,7 @@ async def update_company(company_id: int, company_data: dict):
             raise HTTPException(status_code=404, detail="Company not found")
 
     except Exception as e:
-        print(f" Update company error: {e}")
+        print(f"❌ Update company error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -827,7 +827,7 @@ async def delete_company(company_id: int):
 
         return {"status": "success", "message": "Company deleted successfully"}
     except Exception as e:
-        print(f" Delete company error: {e}")
+        print(f"❌ Delete company error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -844,7 +844,7 @@ async def add_to_pipeline(company_data: dict):
             "pipeline_id": pipeline_id,
         }
     except Exception as e:
-        print(f" Add to pipeline error: {e}")
+        print(f"❌ Add to pipeline error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -897,7 +897,7 @@ async def create_tender(tender_data: dict):
             raise Exception("Failed to create tender - no data returned from database")
             
     except Exception as e:
-        print(f" Create tender error: {e}")
+        print(f"❌ Create tender error: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -913,7 +913,7 @@ async def get_tenders():
             "data": {"tenders": tenders}
         }
     except Exception as e:
-        print(f" Get tenders error: {e}")
+        print(f"❌ Get tenders error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/tenders/{tender_id}")
@@ -937,7 +937,7 @@ async def get_tender_by_deal_id(deal_id: str):
                 "data": None
             }
     except Exception as e:
-        print(f" Get tender by deal ID error: {e}")
+        print(f"❌ Get tender by deal ID error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/tenders/{tender_id}")
@@ -954,7 +954,7 @@ async def get_tender(tender_id: str):
         else:
             raise HTTPException(status_code=404, detail="Tender not found")
     except Exception as e:
-        print(f" Get tender error: {e}")
+        print(f"❌ Get tender error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/tenders/{tender_id}")
@@ -970,7 +970,7 @@ async def update_tender(tender_id: str, tender_data: dict):
         else:
             raise HTTPException(status_code=404, detail="Tender not found")
     except Exception as e:
-        print(f" Update tender error: {e}")
+        print(f"❌ Update tender error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/tenders/{tender_id}")
@@ -986,14 +986,14 @@ async def delete_tender(tender_id: str):
         else:
             raise HTTPException(status_code=404, detail="Tender not found")
     except Exception as e:
-        print(f" Delete tender error: {e}")
+        print(f"❌ Delete tender error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/api/tenders/cleanup-test-records")
 async def cleanup_test_tender_records():
     """Clean up test tender records, keep only real pipeline leads"""
     try:
-        print(" Cleaning up test tender records...")
+        print("🧹 Cleaning up test tender records...")
         
         # Gerçek pipeline lead ID'leri
         real_deal_ids = [
@@ -1021,9 +1021,9 @@ async def cleanup_test_tender_records():
                     print(f"🗑️ Deleted: {tender['company_name']} ({tender['id']})")
                     deleted_count += 1
                 else:
-                    print(f" Failed to delete: {tender['company_name']} ({tender['id']})")
+                    print(f"❌ Failed to delete: {tender['company_name']} ({tender['id']})")
             except Exception as e:
-                print(f" Error deleting {tender['company_name']}: {str(e)}")
+                print(f"❌ Error deleting {tender['company_name']}: {str(e)}")
         
         # Final durum
         remaining_tenders = db.get_tenders()
@@ -1045,7 +1045,7 @@ async def cleanup_test_tender_records():
         }
         
     except Exception as e:
-        print(f" Cleanup error: {e}")
+        print(f"❌ Cleanup error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/tenders/{tender_id}/pdf")
@@ -1066,7 +1066,7 @@ async def generate_tender_pdf(tender_id: str, language: str = 'en'):
         try:
             pdf_content = generate_pdf_content_weasyprint(tender, language)
         except Exception as weasy_error:
-            print(f" WeasyPrint failed, falling back to ReportLab: {weasy_error}")
+            print(f"⚠️ WeasyPrint failed, falling back to ReportLab: {weasy_error}")
             pdf_content = generate_pdf_content(tender, language)
         
         # Create temporary file
@@ -1086,7 +1086,7 @@ async def generate_tender_pdf(tender_id: str, language: str = 'en'):
         )
         
     except Exception as e:
-        print(f" Generate PDF error: {e}")
+        print(f"❌ Generate PDF error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
@@ -1108,12 +1108,10 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
         try:
             # Try different font paths for Turkish character support
             font_paths = [
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux DejaVu (primary)
-                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",  # Linux Liberation
-                "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",  # Linux Noto Sans
-                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",  # Linux DejaVu Bold
                 "/System/Library/Fonts/Arial.ttf",  # macOS Arial
                 "/System/Library/Fonts/Helvetica.ttc",  # macOS Helvetica
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux DejaVu
+                "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",  # Linux Liberation
                 "/Windows/Fonts/arial.ttf",  # Windows Arial
             ]
             
@@ -1132,19 +1130,19 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
                         
                         font_name = 'CustomFont'
                         font_registered = True
-                        print(f" Registered font: {font_path}")
+                        print(f"✅ Registered font: {font_path}")
                         break
                     except Exception as e:
-                        print(f" Failed to register font {font_path}: {e}")
+                        print(f"⚠️ Failed to register font {font_path}: {e}")
                         continue
             
             if not font_registered:
-                print(" No UTF-8 compatible font found, using built-in fonts")
+                print("⚠️ No UTF-8 compatible font found, using built-in fonts")
                 font_name = 'Helvetica'
                 font_name_bold = 'Helvetica-Bold'
                 
         except Exception as font_error:
-            print(f" Font registration error: {font_error}")
+            print(f"⚠️ Font registration error: {font_error}")
             font_name = 'Helvetica'
             font_name_bold = 'Helvetica-Bold'
         
@@ -1204,13 +1202,13 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
                 'deadline': 'Son Tarih:',
                 'budget_range': 'Bütçe Aralığı:',
                 'total_amount': 'Toplam Tutar:',
-                'project_description': 'Proje Açıklaması',
-                'project_requirements': 'Proje Gereksinimleri',
-                'products_services': 'Ürün ve Hizmetler',
-                'terms_conditions': 'Şartlar ve Koşullar',
-                'payment_terms': 'Ödeme Şartları',
-                'delivery_timeline': 'Teslimat Zamanı',
-                'contact_info': 'İletişim Bilgileri',
+                'project_description': '📋 Proje Açıklaması',
+                'project_requirements': '📝 Proje Gereksinimleri',
+                'products_services': '💼 Ürün ve Hizmetler',
+                'terms_conditions': '📜 Şartlar ve Koşullar',
+                'payment_terms': '💳 Ödeme Şartları',
+                'delivery_timeline': '🚚 Teslimat Zamanı',
+                'contact_info': '📞 İletişim Bilgileri',
                 'confidential': 'Bu teklif gizli ve özeldir'
             }
         else:
@@ -1223,13 +1221,13 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
                 'deadline': 'Proposal Deadline:',
                 'budget_range': 'Budget Range:',
                 'total_amount': 'Total Amount:',
-                'project_description': 'Project Description',
-                'project_requirements': ' Project Requirements',
-                'products_services': 'Products & Services',
-                'terms_conditions': 'Terms & Conditions',
-                'payment_terms': 'Payment Terms',
-                'delivery_timeline': 'Delivery Timeline',
-                'contact_info': 'Contact Information',
+                'project_description': '📋 Project Description',
+                'project_requirements': '📝 Project Requirements',
+                'products_services': '💼 Products & Services',
+                'terms_conditions': '📜 Terms & Conditions',
+                'payment_terms': '💳 Payment Terms',
+                'delivery_timeline': '🚚 Delivery Timeline',
+                'contact_info': '📞 Contact Information',
                 'confidential': 'This proposal is confidential and proprietary'
             }
         
@@ -1245,9 +1243,9 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
         summary_data = [
             [content['project_title'], tender_data.get('project_title', 'N/A')],
             [content['company'], tender_data.get('company_name', 'N/A')],
-            [content['deadline'], tender_data.get('deadline', 'To be determined')],
+            [content['deadline'], tender_data.get('deadline', 'N/A')],
             [content['budget_range'], tender_data.get('budget_range', 'N/A')],
-            [content['total_amount'], f"TL {tender_data.get('total_amount', 0):,.2f}"]
+            [content['total_amount'], f"₺{tender_data.get('total_amount', 0):,.2f}"]
         ]
         
         summary_table = Table(summary_data, colWidths=[2.2*inch, 3.8*inch])
@@ -1271,13 +1269,13 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
         # Project Description
         if tender_data.get('description'):
             story.append(Paragraph(content['project_description'], heading_style))
-            story.append(Paragraph(tender_data.get('description', 'Project details will be provided during discussion'), normal_style))
+            story.append(Paragraph(tender_data.get('description', ''), normal_style))
             story.append(Spacer(1, 15))
         
         # Requirements
         if tender_data.get('requirements'):
             story.append(Paragraph(content['project_requirements'], heading_style))
-            story.append(Paragraph(tender_data.get('requirements', 'Detailed requirements will be discussed'), normal_style))
+            story.append(Paragraph(tender_data.get('requirements', ''), normal_style))
             story.append(Spacer(1, 15))
         
         # Products/Services
@@ -1307,12 +1305,12 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
                         name,
                         desc[:50] + '...' if len(desc) > 50 else desc,  # Truncate long descriptions
                         str(qty),
-                        f"TL {unit_price:,.2f}",
-                        f"TL {total_price:,.2f}"
+                        f"₺{unit_price:,.2f}",
+                        f"₺{total_price:,.2f}"
                     ])
             
             # Add total row
-            ps_data.append(['', '', '', 'TOTAL:', f"TL {total_amount:,.2f}"])
+            ps_data.append(['', '', '', 'TOTAL:', f"₺{total_amount:,.2f}"])
             
             ps_table = Table(ps_data, colWidths=[1.3*inch, 2.2*inch, 0.6*inch, 1*inch, 1*inch])
             ps_table.setStyle(TableStyle([
@@ -1337,25 +1335,25 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
         # Terms & Conditions
         if tender_data.get('terms_conditions'):
             story.append(Paragraph(content['terms_conditions'], heading_style))
-            story.append(Paragraph(tender_data.get('terms_conditions', 'Standard terms and conditions will be provided'), normal_style))
+            story.append(Paragraph(tender_data.get('terms_conditions', ''), normal_style))
             story.append(Spacer(1, 15))
         
         # Payment Terms
         if tender_data.get('payment_terms'):
             story.append(Paragraph(content['payment_terms'], heading_style))
-            story.append(Paragraph(tender_data.get('payment_terms', 'Payment schedule will be agreed upon'), normal_style))
+            story.append(Paragraph(tender_data.get('payment_terms', ''), normal_style))
             story.append(Spacer(1, 15))
         
         # Delivery Timeline
         if tender_data.get('delivery_timeline'):
             story.append(Paragraph(content['delivery_timeline'], heading_style))
-            story.append(Paragraph(tender_data.get('delivery_timeline', 'Delivery timeline will be confirmed'), normal_style))
+            story.append(Paragraph(tender_data.get('delivery_timeline', ''), normal_style))
             story.append(Spacer(1, 15))
         
         # Contact Information
         if tender_data.get('contact_info'):
             story.append(Paragraph(content['contact_info'], heading_style))
-            story.append(Paragraph(tender_data.get('contact_info', 'Contact details will be provided separately'), normal_style))
+            story.append(Paragraph(tender_data.get('contact_info', ''), normal_style))
             story.append(Spacer(1, 20))
         
         story.append(Spacer(1, 15))        # Footer Section
@@ -1392,7 +1390,7 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
         return pdf_content
         
     except Exception as e:
-        print(f" PDF generation error: {e}")
+        print(f"❌ PDF generation error: {e}")
         raise e
 
 def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> bytes:
@@ -1585,7 +1583,7 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                     </tr>
                     <tr>
                         <td>{content['deadline']}</td>
-                        <td>{tender_data.get('deadline', 'To be determined')}</td>
+                        <td>{tender_data.get('deadline', 'N/A')}</td>
                     </tr>
                     <tr>
                         <td>{content['budget_range']}</td>
@@ -1593,7 +1591,7 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                     </tr>
                     <tr>
                         <td>{content['total_amount']}</td>
-                        <td>TL {tender_data.get('total_amount', 0):,.2f}</td>
+                        <td>₺{tender_data.get('total_amount', 0):,.2f}</td>
                     </tr>
                 </table>
             </div>
@@ -1602,14 +1600,14 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
         # Add sections
         if tender_data.get('description'):
             html_content += f"""
-            <div class="section-title"> {content['project_description']}</div>
-            <div class="content-text">{tender_data.get('description', 'Project details will be provided during discussion')}</div>
+            <div class="section-title">📋 {content['project_description']}</div>
+            <div class="content-text">{tender_data.get('description', '')}</div>
             """
         
         if tender_data.get('requirements'):
             html_content += f"""
-            <div class="section-title"> {content['project_requirements']}</div>
-            <div class="content-text">{tender_data.get('requirements', 'Detailed requirements will be discussed')}</div>
+            <div class="section-title">📝 {content['project_requirements']}</div>
+            <div class="content-text">{tender_data.get('requirements', '')}</div>
             """
         
         # Products/Services table
@@ -1623,7 +1621,7 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                 total_text = 'TOTAL'
             
             html_content += f"""
-            <div class="section-title"> {content['products_services']}</div>
+            <div class="section-title">💼 {content['products_services']}</div>
             <table class="products-table">
                 <tr>
                     <th>{ps_headers[0]}</th>
@@ -1649,8 +1647,8 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                         <td>{name}</td>
                         <td>{desc}</td>
                         <td>{qty}</td>
-                        <td>TL {unit_price:,.2f}</td>
-                        <td>TL {total_price:,.2f}</td>
+                        <td>₺{unit_price:,.2f}</td>
+                        <td>₺{total_price:,.2f}</td>
                     </tr>
                     """
             
@@ -1665,26 +1663,26 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
         # Other sections
         if tender_data.get('terms_conditions'):
             html_content += f"""
-            <div class="section-title"> {content['terms_conditions']}</div>
-            <div class="content-text">{tender_data.get('terms_conditions', 'Standard terms and conditions will be provided')}</div>
+            <div class="section-title">📜 {content['terms_conditions']}</div>
+            <div class="content-text">{tender_data.get('terms_conditions', '')}</div>
             """
         
         if tender_data.get('payment_terms'):
             html_content += f"""
-            <div class="section-title"> {content['payment_terms']}</div>
-            <div class="content-text">{tender_data.get('payment_terms', 'Payment schedule will be agreed upon')}</div>
+            <div class="section-title">💳 {content['payment_terms']}</div>
+            <div class="content-text">{tender_data.get('payment_terms', '')}</div>
             """
         
         if tender_data.get('delivery_timeline'):
             html_content += f"""
-            <div class="section-title"> {content['delivery_timeline']}</div>
-            <div class="content-text">{tender_data.get('delivery_timeline', 'Delivery timeline will be confirmed')}</div>
+            <div class="section-title">🚚 {content['delivery_timeline']}</div>
+            <div class="content-text">{tender_data.get('delivery_timeline', '')}</div>
             """
         
         if tender_data.get('contact_info'):
             html_content += f"""
-            <div class="section-title"> {content['contact_info']}</div>
-            <div class="content-text">{tender_data.get('contact_info', 'Contact details will be provided separately')}</div>
+            <div class="section-title">📞 {content['contact_info']}</div>
+            <div class="content-text">{tender_data.get('contact_info', '')}</div>
             """
         
         # Footer
@@ -1717,17 +1715,17 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                 os.unlink(tmp_html_path)
         
     except Exception as e:
-        print(f" WeasyPrint PDF generation error: {e}")
+        print(f"❌ WeasyPrint PDF generation error: {e}")
         raise e
 
 @app.get("/api/pipeline")
 async def get_pipeline():
     """Tüm pipeline verilerini getir"""
     try:
-        print(" Getting pipeline data from database...")
+        print("🔍 Getting pipeline data from database...")
         pipeline = db.get_pipeline(limit=100)
-        print(f" Raw pipeline data from DB: {pipeline}")
-        print(f" Pipeline length: {len(pipeline) if pipeline else 'None'}")
+        print(f"🔍 Raw pipeline data from DB: {pipeline}")
+        print(f"🔍 Pipeline length: {len(pipeline) if pipeline else 'None'}")
 
         # Standardize pipeline statuses for frontend compatibility
         for item in pipeline:
@@ -1742,10 +1740,10 @@ async def get_pipeline():
             "message": "Pipeline data retrieved successfully",
             "data": {"pipeline": pipeline, "sales_cycle_days": sales_cycle_days},
         }
-        print(f" Final result: {result}")
+        print(f"🔍 Final result: {result}")
         return result
     except Exception as e:
-        print(f" Get pipeline error: {e}")
+        print(f"❌ Get pipeline error: {e}")
         import traceback
 
         traceback.print_exc()
@@ -1763,7 +1761,7 @@ async def get_chat_history():
             "data": {"chat_history": history},
         }
     except Exception as e:
-        print(f" Get chat history error: {e}")
+        print(f"❌ Get chat history error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1778,7 +1776,7 @@ async def save_chat_history(chat_entry: dict):
             "data": {"chat_id": chat_id},
         }
     except Exception as e:
-        print(f" Save chat history error: {e}")
+        print(f"❌ Save chat history error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1792,7 +1790,7 @@ async def delete_chat_history(chat_id: str):
         else:
             raise HTTPException(status_code=404, detail="Chat entry not found")
     except Exception as e:
-        print(f" Delete chat history error: {e}")
+        print(f"❌ Delete chat history error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1804,7 +1802,7 @@ async def clear_chat_history():
 
         return {"status": "success", "message": "All chat history cleared successfully"}
     except Exception as e:
-        print(f" Clear chat history error: {e}")
+        print(f"❌ Clear chat history error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1820,7 +1818,7 @@ async def get_collected_leads():
             "data": {"leads": leads},
         }
     except Exception as e:
-        print(f" Get collected leads error: {e}")
+        print(f"❌ Get collected leads error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1840,7 +1838,7 @@ async def add_collected_lead(lead_data: dict):
             "lead_id": lead_id,
         }
     except Exception as e:
-        print(f" Add lead error: {e}")
+        print(f"❌ Add lead error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1855,7 +1853,7 @@ async def update_collected_lead(lead_id: str, lead_data: dict):
         else:
             raise HTTPException(status_code=404, detail="Lead not found")
     except Exception as e:
-        print(f" Update lead error: {e}")
+        print(f"❌ Update lead error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1870,7 +1868,7 @@ async def delete_collected_lead(lead_id: str):
         else:
             raise HTTPException(status_code=404, detail="Lead not found")
     except Exception as e:
-        print(f" Delete lead error: {e}")
+        print(f"❌ Delete lead error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1886,11 +1884,11 @@ async def clear_all_collected_leads():
         else:
             raise HTTPException(status_code=500, detail="Failed to clear leads")
     except Exception as e:
-        print(f" Clear all leads error: {e}")
+        print(f"❌ Clear all leads error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
         return {"status": "success", "message": "Chat history cleared successfully"}
     except Exception as e:
-        print(f" Clear chat history error: {e}")
+        print(f"❌ Clear chat history error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1914,7 +1912,7 @@ async def update_pipeline(pipeline_id: str, updated_data: dict):
         else:
             raise HTTPException(status_code=404, detail="Pipeline entry not found")
     except Exception as e:
-        print(f" Update pipeline error: {e}")
+        print(f"❌ Update pipeline error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1926,14 +1924,14 @@ async def delete_pipeline(pipeline_id: str):
 
         # Pipeline verisini sil
         success = delete_pipeline_from_database(pipeline_id)
-        print(f" Delete result: {success}")
+        print(f"🔍 Delete result: {success}")
 
         if success:
             return {"status": "success", "message": "Pipeline deleted successfully"}
         else:
             raise HTTPException(status_code=404, detail="Pipeline entry not found")
     except Exception as e:
-        print(f" Delete pipeline error: {e}")
+        print(f"❌ Delete pipeline error: {e}")
         import traceback
 
         traceback.print_exc()
@@ -2051,7 +2049,7 @@ def update_company_in_database(company_id: int, company_data: dict) -> bool:
 
         return False
     except Exception as e:
-        print(f" Error updating company: {e}")
+        print(f"❌ Error updating company: {e}")
         return False
 
 
@@ -2070,7 +2068,7 @@ def save_company_to_pipeline(company_data: dict) -> int:
         print(f"📊 Company added to pipeline: {pipeline_id}")
         return pipeline_id
     except Exception as e:
-        print(f" Error adding to pipeline: {e}")
+        print(f"❌ Error adding to pipeline: {e}")
         raise e
 
 
@@ -2086,20 +2084,20 @@ def update_pipeline_in_database(pipeline_id: str, updated_data: dict) -> bool:
         # Diğer güncellemeler için repository'ye ek metodlar eklenebilir
         return False
     except Exception as e:
-        print(f" Error updating pipeline: {e}")
+        print(f"❌ Error updating pipeline: {e}")
         return False
 
 
 def delete_pipeline_from_database(pipeline_id: str) -> bool:
     """Pipeline repository'den veriyi sil"""
     try:
-        print(f" Attempting to delete pipeline ID: {pipeline_id}")
+        print(f"🔍 Attempting to delete pipeline ID: {pipeline_id}")
         result = db.execute_query("pipeline", "delete", {"id": pipeline_id})
-        print(f" Delete query result: {result}")
-        print(f" Result length: {len(result) if result else 'None'}")
+        print(f"🔍 Delete query result: {result}")
+        print(f"🔍 Result length: {len(result) if result else 'None'}")
         return len(result) > 0 if result else False
     except Exception as e:
-        print(f" Error deleting pipeline: {e}")
+        print(f"❌ Error deleting pipeline: {e}")
         import traceback
 
         traceback.print_exc()
@@ -2124,7 +2122,7 @@ def save_chat_history_to_database(chat_entry: dict) -> str:
         return str(chat_id)
 
     except Exception as e:
-        print(f" Error saving chat history to Supabase: {e}")
+        print(f"❌ Error saving chat history to Supabase: {e}")
         # Fallback: basit ID döndür
         import uuid
 
@@ -2140,7 +2138,7 @@ def load_chat_history_from_database() -> list:
         return history
 
     except Exception as e:
-        print(f" Error loading chat history from Supabase: {e}")
+        print(f"❌ Error loading chat history from Supabase: {e}")
         return []
 
 
@@ -2173,7 +2171,7 @@ def delete_chat_history_from_database(chat_id: str) -> bool:
 
         return False
     except Exception as e:
-        print(f" Error deleting chat history: {e}")
+        print(f"❌ Error deleting chat history: {e}")
         return False
 
 
@@ -2205,7 +2203,7 @@ def save_archived_weeks_to_database(archived_weeks: list) -> bool:
         print(f"💾 Archived weeks saved: {len(archived_weeks)} weeks")
         return True
     except Exception as e:
-        print(f" Error saving archived weeks: {e}")
+        print(f"❌ Error saving archived weeks: {e}")
         return False
 
 
@@ -2225,7 +2223,7 @@ def load_archived_weeks_from_database() -> list:
         print(f"📚 Loaded {len(archived_weeks)} archived weeks from database")
         return archived_weeks
     except Exception as e:
-        print(f" Error loading archived weeks: {e}")
+        print(f"❌ Error loading archived weeks: {e}")
         return []
 
 
@@ -2264,7 +2262,7 @@ async def refresh_token(refresh_token: str = Form(...)):
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Token refresh error: {e}")
+        print(f"❌ Token refresh error: {e}")
         raise HTTPException(status_code=500, detail=f"Token refresh failed: {str(e)}")
 
 
@@ -2279,7 +2277,7 @@ async def logout_user():
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Logout error: {e}")
+        print(f"❌ Logout error: {e}")
         raise HTTPException(status_code=500, detail=f"Logout failed: {str(e)}")
 
 
@@ -2330,7 +2328,7 @@ async def create_user(
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Create user error: {e}")
+        print(f"❌ Create user error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
 
 
@@ -2362,7 +2360,7 @@ async def get_users(current_user: dict = Depends(require_admin())):
         return {"status": "success", "users": safe_users}
 
     except Exception as e:
-        print(f" Get users error: {e}")
+        print(f"❌ Get users error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get users: {str(e)}")
 
 
@@ -2390,7 +2388,7 @@ async def get_user_profile(current_user: dict = Depends(get_current_active_user)
         }
 
     except Exception as e:
-        print(f" Get user profile error: {e}")
+        print(f"❌ Get user profile error: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get user profile: {str(e)}"
         )
@@ -2432,7 +2430,7 @@ async def get_user_by_id(
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Get user by ID error: {e}")
+        print(f"❌ Get user by ID error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get user: {str(e)}")
 
 
@@ -2490,7 +2488,7 @@ async def update_user(
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Update user error: {e}")
+        print(f"❌ Update user error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to update user: {str(e)}")
 
 
@@ -2518,7 +2516,7 @@ async def delete_user(
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Delete user error: {e}")
+        print(f"❌ Delete user error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
 
 
@@ -2562,7 +2560,7 @@ async def create_user_admin(
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Create user error: {e}")
+        print(f"❌ Create user error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
 
 
@@ -2602,7 +2600,7 @@ async def add_existing_user_to_db(
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Add existing user error: {e}")
+        print(f"❌ Add existing user error: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to add existing user: {str(e)}"
         )
@@ -2627,7 +2625,7 @@ async def make_user_admin(user_id: str, current_user: dict = Depends(require_adm
             raise HTTPException(status_code=500, detail="Failed to promote user")
 
     except Exception as e:
-        print(f" Make admin error: {e}")
+        print(f"❌ Make admin error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to promote user: {str(e)}")
 
 
@@ -2656,7 +2654,7 @@ async def revoke_user_admin(
             )
 
     except Exception as e:
-        print(f" Revoke admin error: {e}")
+        print(f"❌ Revoke admin error: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to revoke admin privileges: {str(e)}"
         )
@@ -2706,7 +2704,7 @@ async def get_project_management_weeks():
         }
 
     except Exception as e:
-        print(f" Get project management weeks error: {e}")
+        print(f"❌ Get project management weeks error: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get project management weeks: {str(e)}"
         )
@@ -2751,7 +2749,7 @@ async def create_project_management_week(week_data: dict):
         }
 
     except Exception as e:
-        print(f" Create project management week error: {e}")
+        print(f"❌ Create project management week error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to create week: {str(e)}")
 
 
@@ -2759,14 +2757,14 @@ async def create_project_management_week(week_data: dict):
 async def update_project_management_week(week_id: str, week_data: dict):
     """Project management haftasını güncelle"""
     try:
-        print(f" UPDATE ENDPOINT: week_id={week_id}")
-        print(f" UPDATE ENDPOINT: week_data={week_data}")
+        print(f"🔍 UPDATE ENDPOINT: week_id={week_id}")
+        print(f"🔍 UPDATE ENDPOINT: week_data={week_data}")
 
         from repositories import project_management_repo
 
         # Sadece sections'ları güncelle
         sections = week_data.get("sections", {})
-        print(f" UPDATE ENDPOINT: sections={sections}")
+        print(f"🔍 UPDATE ENDPOINT: sections={sections}")
 
         update_data = {
             "sections": {
@@ -2777,11 +2775,11 @@ async def update_project_management_week(week_id: str, week_data: dict):
             }
         }
 
-        print(f" UPDATE ENDPOINT: update_data={update_data}")
+        print(f"🔍 UPDATE ENDPOINT: update_data={update_data}")
 
         success = project_management_repo.update_week(week_id, update_data)
 
-        print(f" UPDATE ENDPOINT: success={success}")
+        print(f"🔍 UPDATE ENDPOINT: success={success}")
 
         if success:
             return {"status": "success", "message": "Week updated successfully"}
@@ -2791,7 +2789,7 @@ async def update_project_management_week(week_id: str, week_data: dict):
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Update project management week error: {e}")
+        print(f"❌ Update project management week error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to update week: {str(e)}")
 
 
@@ -2811,7 +2809,7 @@ async def delete_project_management_week(week_id: str):
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f" Delete project management week error: {e}")
+        print(f"❌ Delete project management week error: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to delete week: {str(e)}")
 
 
@@ -2823,5 +2821,5 @@ if __name__ == "__main__":
     # Port'u environment variable'dan al, default 8000
     port = int(os.getenv("PORT", 8000))
 
-    print(f" Starting FastAPI server on port {port}")
+    print(f"🚀 Starting FastAPI server on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)

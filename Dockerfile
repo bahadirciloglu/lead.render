@@ -13,10 +13,16 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     ENVIRONMENT=production
 
-# Install system dependencies
+# Install system dependencies including fonts
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    wget \
+    fontconfig \
+    fonts-dejavu-core \
+    fonts-liberation \
+    fonts-noto-cjk \
+    fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
 # Create app directory
@@ -33,6 +39,9 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p /app/logs
 
+# Update font cache
+RUN fc-cache -fv
+
 # Expose port
 EXPOSE 8000
 
@@ -41,4 +50,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/health || exit 1
 
 # Default command
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] 
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
