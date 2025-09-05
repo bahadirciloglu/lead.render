@@ -9,10 +9,14 @@ on:
 
 env:
   PYTHON_VERSION: '3.11'
+  # Supabase environment variables from GitHub Secrets
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
 jobs:
   test:
-    name: �� Basic Tests
+    name: 🧪 Basic Tests
     runs-on: ubuntu-latest
     
     steps:
@@ -46,6 +50,10 @@ jobs:
     - name: 🧪 Run basic tests
       run: |
         echo "🧪 Running basic tests..."
+        echo "Environment variables:"
+        echo "SUPABASE_URL: $SUPABASE_URL"
+        echo "SUPABASE_ANON_KEY: $SUPABASE_ANON_KEY"
+        
         python -c "import main; print('✅ Main module imports successfully')"
         python -c "import supabase_database; print('✅ Database module imports successfully')"
         python -c "import supabase_auth; print('✅ Auth module imports successfully')"
@@ -54,7 +62,11 @@ jobs:
     - name: 🐳 Test Docker container startup
       run: |
         echo "🚀 Testing Docker container startup..."
-        docker run -d --name test-container -p 8000:8000 lead-discovery-api:test
+        docker run -d --name test-container -p 8000:8000 \
+          -e SUPABASE_URL="$SUPABASE_URL" \
+          -e SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+          -e SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
+          lead-discovery-api:test
         sleep 10
         echo "✅ Container started successfully"
         
