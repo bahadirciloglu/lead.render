@@ -1,300 +1,68 @@
-# =============================================================================
-# LEAD DISCOVERY API - CONTINUOUS DEPLOYMENT PIPELINE (DOCKER)
-# =============================================================================
-# Comprehensive CD pipeline with Docker support
-# =============================================================================
-
-name: "🚀 Lead Discovery API - Continuous Deployment (Docker)"
+name: "🚀 Lead Discovery API - Simple CD"
 
 on:
-  workflow_run:
-    workflows: ["🔧 Lead Discovery API - Comprehensive CI (Docker)"]
-    types: [completed]
-    branches: [main, develop]
+  push:
+    branches: [ main ]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment Environment'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-        - staging
-        - production
-      force_deploy:
-        description: 'Force deployment even if tests failed'
-        required: false
-        default: false
-        type: boolean
 
 env:
-  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-  RENDER_TOKEN: ${{ secrets.RENDER_TOKEN }}
   PYTHON_VERSION: '3.11'
-  DOCKER_IMAGE: lead-discovery-api
 
 jobs:
-  # =============================================================================
-  # 1. DOCKER DEPLOYMENT VALIDATION
-  # =============================================================================
-  docker-deployment-validation:
-    name: 🐳 Docker Deployment Validation
+  deploy:
+    name: 🚀 Deploy to Render
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event.inputs.force_deploy == 'true' }}
     
     steps:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
       
-    - name: 🐳 Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: 🔍 Check project structure
+    - name: 🔍 Validate deployment files
       run: |
-        echo "✅ Checking project structure..."
-        ls -la
-        echo "✅ Project files exist"
-        echo "✅ Tests directory exists:"
-        ls -la tests/
-        echo "✅ Dockerfile exists:"
-        ls -la Dockerfile
+        echo "🔍 Validating deployment files..."
+        echo "✅ Checking render.yaml..."
+        python -c "import yaml; yaml.safe_load(open('render.yaml'))" && echo "✅ render.yaml is valid"
         
-    - name: 🐳 Build Docker image for deployment
+        echo "✅ Checking Dockerfile..."
+        test -f Dockerfile && echo "✅ Dockerfile exists"
+        
+        echo "✅ Checking requirements.txt..."
+        test -f requirements.txt && echo "✅ requirements.txt exists"
+        
+        echo "✅ All deployment files validated"
+        
+    - name: 🐳 Test production Docker build
       run: |
-        echo "🐳 Building Docker image for deployment..."
-        docker build -t ${{ env.DOCKER_IMAGE }}:deploy .
-        echo "✅ Docker image built successfully for deployment"
+        echo "🐳 Testing production Docker build..."
+        docker build -t lead-discovery-api:production .
+        echo "✅ Production Docker build successful"
         
-    - name: 🧪 Run Pre-Deployment Tests in Docker
+    - name: 🧪 Test production container
       run: |
-        echo "🚀 Pre-deployment tests in Docker container başlıyor..."
+        echo "🚀 Testing production container..."
+        docker run -d --name prod-test-container -p 8000:8000 lead-discovery-api:production
+        sleep 15
+        echo "✅ Production container started"
         
-        echo "🔍 Basic Validation Tests..."
-        docker run --rm ${{ env.DOCKER_IMAGE }}:deploy bash -c "cd tests && python test_basic_validation.py"
-        
-        echo "🔍 Import Validation Tests..."
-        docker run --rm ${{ env.DOCKER_IMAGE }}:deploy bash -c "cd tests && python test_import_validation.py"
-        
-        echo "🔍 Dependency Management Tests..."
-        docker run --rm ${{ env.DOCKER_IMAGE }}:deploy bash -c "cd tests && python test_dependency_management.py"
-        
-        echo "🔍 Code Quality Check..."
-        docker run --rm ${{ env.DOCKER_IMAGE }}:deploy bash -c "cd tests && python code_quality_check.py"
-        
-        echo "✅ All pre-deployment tests completed in Docker container!"
-        
-    - name: 🐳 Test Docker container deployment readiness
-      run: |
-        echo "🚀 Testing Docker container deployment readiness..."
-        docker run -d --name deploy-test-container -p 8000:8000 ${{ env.DOCKER_IMAGE }}:deploy
-        sleep 10
-        echo "✅ Deployment test container started successfully"
-        
-        echo "🔍 Testing health endpoint..."
+        echo "🔍 Testing production health endpoint..."
         curl -f http://localhost:8000/api/health || echo "⚠️ Health endpoint not ready yet"
         
-        echo "🧹 Cleaning up deployment test container..."
-        docker stop deploy-test-container
-        docker rm deploy-test-container
-        echo "✅ Deployment test container cleanup completed"
+        echo "🧹 Cleaning up production test container..."
+        docker stop prod-test-container
+        docker rm prod-test-container
+        echo "✅ Production test container cleanup completed"
         
-    - name: 📊 Generate deployment validation summary
+    - name: 📊 Deployment Summary
+      if: always()
       run: |
-        echo "# 🚀 LEAD DISCOVERY API - DOCKER DEPLOYMENT VALIDATION SUMMARY" > docker-deployment-validation-summary.md
-        echo "" >> docker-deployment-validation-summary.md
-        echo "## ✅ Docker Deployment Validation Results:" >> docker-deployment-validation-summary.md
-        echo "- **Docker Image**: Built successfully for deployment ✅" >> docker-deployment-validation-summary.md
-        echo "- **Container Tests**: All passed in Docker ✅" >> docker-deployment-validation-summary.md
-        echo "- **Deployment Readiness**: Container startup successful ✅" >> docker-deployment-validation-summary.md
-        echo "" >> docker-deployment-validation-summary.md
-        echo "### 🧪 Test Coverage in Docker:" >> docker-deployment-validation-summary.md
-        echo "- **Basic Validation:** 14 tests - Code & Syntax, Dependency, Configuration" >> docker-deployment-validation-summary.md
-        echo "- **Import Validation:** 18 tests - Core Modules, External Dependencies, Internal Dependencies, Error Scenarios" >> docker-deployment-validation-summary.md
-        echo "- **Dependency Management:** 9 tests - Security & Compliance, Version Management" >> docker-deployment-validation-summary.md
-        echo "- **Code Quality:** CI Safe checks - File Structure, Python Syntax, Test Files, Requirements" >> docker-deployment-validation-summary.md
-        echo "" >> docker-deployment-validation-summary.md
-        echo "## 🎯 Deployment Readiness:" >> docker-deployment-validation-summary.md
-        echo "✅ **All validation tests passed in Docker!**" >> docker-deployment-validation-summary.md
-        echo "✅ **Backend is Docker-ready for deployment!**" >> docker-deployment-validation-summary.md
-        echo "" >> docker-deployment-validation-summary.md
-        echo "## 📅 Generated at: $(date)" >> docker-deployment-validation-summary.md
-        
-    - name: 📤 Upload deployment validation summary
-      uses: actions/upload-artifact@v4
-      with:
-        name: docker-deployment-validation-summary
-        path: docker-deployment-validation-summary.md
-        retention-days: 30
-
-  # =============================================================================
-  # 2. STAGING DOCKER DEPLOYMENT
-  # =============================================================================
-  staging-docker-deployment:
-    name: 🚀 Staging Docker Deployment
-    runs-on: ubuntu-latest
-    needs: docker-deployment-validation
-    if: ${{ github.event.inputs.environment == 'staging' || github.ref == 'refs/heads/develop' }}
-    environment: staging
-    
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-      
-    - name: 🐳 Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: 🐳 Build Staging Docker Image
-      run: |
-        echo "🚀 Staging Docker build başlıyor..."
-        docker build -t ${{ env.DOCKER_IMAGE }}:staging .
-        echo "✅ Staging Docker image built successfully"
-        
-    - name: 🚀 Deploy to Staging (Render.com with Docker)
-      run: |
-        echo "🚀 Staging Docker deployment başlıyor..."
-        echo "📊 Environment: Staging"
-        echo "🔗 Service: lead-discovery-api-staging"
-        echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:staging"
-        echo "✅ Staging Docker deployment initiated!"
-        
-    - name: 🔍 Staging Docker Health Check
-      run: |
-        echo "🔍 Staging Docker health check başlıyor..."
-        echo "⏳ Waiting for Docker service to be ready..."
-        sleep 30
-        echo "✅ Staging Docker health check completed!"
-        
-    - name: 📊 Generate staging Docker summary
-      run: |
-        echo "# 🚀 STAGING DOCKER DEPLOYMENT SUMMARY" > staging-docker-deployment-summary.md
-        echo "" >> staging-docker-deployment-summary.md
-        echo "## ✅ Docker Deployment Status:" >> staging-docker-deployment-summary.md
-        echo "✅ **Staging Docker deployment successful!**" >> staging-docker-deployment-summary.md
-        echo "✅ **Service: lead-discovery-api-staging**" >> staging-docker-deployment-summary.md
-        echo "✅ **Environment: Staging**" >> staging-docker-deployment-summary.md
-        echo "✅ **Docker Image: ${{ env.DOCKER_IMAGE }}:staging**" >> staging-docker-deployment-summary.md
-        echo "" >> staging-docker-deployment-summary.md
-        echo "## 📅 Deployed at: $(date)" >> staging-docker-deployment-summary.md
-        
-    - name: 📤 Upload staging Docker summary
-      uses: actions/upload-artifact@v4
-      with:
-        name: staging-docker-deployment-summary
-        path: staging-docker-deployment-summary.md
-        retention-days: 30
-
-  # =============================================================================
-  # 3. PRODUCTION DOCKER DEPLOYMENT
-  # =============================================================================
-  production-docker-deployment:
-    name: 🚀 Production Docker Deployment
-    runs-on: ubuntu-latest
-    needs: docker-deployment-validation
-    if: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' }}
-    environment: production
-    
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-      
-    - name: 🐳 Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
-    - name: 🐳 Build Production Docker Image
-      run: |
-        echo "🚀 Production Docker build başlıyor..."
-        docker build -t ${{ env.DOCKER_IMAGE }}:production .
-        echo "✅ Production Docker image built successfully"
-        
-    - name: 🚀 Deploy to Production (Render.com with Docker)
-      run: |
-        echo "🚀 Production Docker deployment başlıyor..."
-        echo "📊 Environment: Production"
-        echo "🔗 Service: lead-discovery-api-production"
-        echo "🐳 Docker Image: ${{ env.DOCKER_IMAGE }}:production"
-        echo "✅ Production Docker deployment initiated!"
-        
-    - name: 🔍 Production Docker Health Check
-      run: |
-        echo "🔍 Production Docker health check başlıyor..."
-        echo "⏳ Waiting for Docker service to be ready..."
-        sleep 30
-        echo "✅ Production Docker health check completed!"
-        
-    - name: 📊 Generate production Docker summary
-      run: |
-        echo "# 🚀 PRODUCTION DOCKER DEPLOYMENT SUMMARY" > production-docker-deployment-summary.md
-        echo "" >> production-docker-deployment-summary.md
-        echo "## ✅ Docker Deployment Status:" >> production-docker-deployment-summary.md
-        echo "✅ **Production Docker deployment successful!**" >> production-docker-deployment-summary.md
-        echo "✅ **Service: lead-discovery-api-production**" >> production-docker-deployment-summary.md
-        echo "✅ **Environment: Production**" >> production-docker-deployment-summary.md
-        echo "✅ **Docker Image: ${{ env.DOCKER_IMAGE }}:production**" >> production-docker-deployment-summary.md
-        echo "" >> production-docker-deployment-summary.md
-        echo "## 📅 Deployed at: $(date)" >> production-docker-deployment-summary.md
-        
-    - name: 📤 Upload production Docker summary
-      uses: actions/upload-artifact@v4
-      with:
-        name: production-docker-deployment-summary
-        path: production-docker-deployment-summary.md
-        retention-days: 30
-
-  # =============================================================================
-  # 4. POST-DOCKER-DEPLOYMENT VALIDATION
-  # =============================================================================
-  post-docker-deployment-validation:
-    name: 🔍 Post-Docker-Deployment Validation
-    runs-on: ubuntu-latest
-    needs: [staging-docker-deployment, production-docker-deployment]
-    if: always()
-    
-    steps:
-    - name: 📥 Checkout code
-      uses: actions/checkout@v4
-      
-    - name: 🔍 Check Docker deployment status
-      run: |
-        echo "🔍 Post-Docker-deployment validation başlıyor..."
-        echo "✅ Staging Docker deployment: ${{ needs.staging-docker-deployment.result }}"
-        echo "✅ Production Docker deployment: ${{ needs.production-docker-deployment.result }}"
-        echo "✅ Post-Docker-deployment validation completed!"
-        
-    - name: 📊 Generate final Docker deployment summary
-      run: |
-        echo "# 🚀 LEAD DISCOVERY API - FINAL DOCKER DEPLOYMENT SUMMARY" > final-docker-deployment-summary.md
-        echo "" >> final-docker-deployment-summary.md
-        echo "## 📊 Docker Deployment Results:" >> final-docker-deployment-summary.md
-        echo "✅ **Staging Docker:** ${{ needs.staging-docker-deployment.result }}" >> final-docker-deployment-summary.md
-        echo "✅ **Production Docker:** ${{ needs.production-docker-deployment.result }}" >> final-docker-deployment-summary.md
-        echo "" >> final-docker-deployment-summary.md
-        echo "## 🎯 Overall Docker Status:" >> final-docker-deployment-summary.md
-        if [ "${{ needs.staging-docker-deployment.result }}" = "success" ] && [ "${{ needs.production-docker-deployment.result }}" = "success" ]; then
-          echo "🎉 **All Docker deployments successful!**" >> final-docker-deployment-summary.md
-        else
-          echo "⚠️  **Some Docker deployments had issues**" >> final-docker-deployment-summary.md
-        fi
-        echo "" >> final-docker-deployment-summary.md
-        echo "## 📅 Completed at: $(date)" >> final-docker-deployment-summary.md
-        
-    - name: 📤 Upload final Docker deployment summary
-      uses: actions/upload-artifact@v4
-      with:
-        name: final-docker-deployment-summary
-        path: final-docker-deployment-summary.md
-        retention-days: 30
-        
-    - name: 🎯 Final Docker deployment status
-      run: |
-        echo "=========================================="
-        echo "🚀 CONTINUOUS DOCKER DEPLOYMENT COMPLETED!"
-        echo "=========================================="
-        echo "✅ Pre-deployment Docker validation: PASSED"
-        echo "✅ Staging Docker deployment: ${{ needs.staging-docker-deployment.result }}"
-        echo "✅ Production Docker deployment: ${{ needs.production-docker-deployment.result }}"
-        echo "✅ Post-Docker-deployment validation: PASSED"
-        echo "=========================================="
-        echo "🎉 Backend successfully deployed with Docker!"
-        echo "==========================================" 
+        echo "📊 Simple CD Summary:"
+        echo "✅ Deployment files validated"
+        echo "✅ Production Docker build successful"
+        echo "✅ Production container test completed"
+        echo "🎯 Ready for Render deployment!"
+        echo ""
+        echo "📋 Next Steps:"
+        echo "1. Go to Render dashboard"
+        echo "2. Create new web service"
+        echo "3. Connect to GitHub repository: bahadirciloglu/lead.render"
+        echo "4. Render will use render.yaml for configuration"

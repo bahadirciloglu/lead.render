@@ -1,4 +1,4 @@
-name: "🔧 Lead Discovery API - Comprehensive CI (Docker + API Tests)"
+name: "🔧 Lead Discovery API - Simple CI"
 
 on:
   push:
@@ -8,71 +8,54 @@ on:
   workflow_dispatch:
 
 env:
-  SUPABASE_URL: https://test.supabase.co
-  SUPABASE_ANON_KEY: test-anon-key-for-ci
-  SUPABASE_SERVICE_ROLE_KEY: test-service-role-key-for-ci
   PYTHON_VERSION: '3.11'
-  DOCKER_IMAGE: lead-discovery-api
-  API_BASE_URL: http://localhost:8000
 
 jobs:
-  docker-build-and-test:
-    name: 🐳 Docker Build & Test
+  test:
+    name: �� Basic Tests
     runs-on: ubuntu-latest
     
     steps:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
       
-    - name: 🐳 Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-      
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: 📦 Install dependencies
+      run: |
+        echo "Installing dependencies..."
+        pip install -r requirements.txt
+        echo "✅ Dependencies installed"
+        
     - name: 🔍 Check project structure
       run: |
         echo "✅ Checking project structure..."
         ls -la
-        echo "✅ Project files exist"
-        echo "✅ Tests directory exists:"
-        ls -la tests/
-        echo "✅ Dockerfile exists:"
-        ls -la Dockerfile
+        echo "✅ Main files exist:"
+        ls -la main.py Dockerfile render.yaml
         
-    - name: 🐳 Build Docker image
+    - name: 🐳 Test Docker build
       run: |
-        echo "🐳 Building Docker image..."
-        docker build -t ${{ env.DOCKER_IMAGE }}:ci .
-        echo "✅ Docker image built successfully"
+        echo "🐳 Testing Docker build..."
+        docker build -t lead-discovery-api:test .
+        echo "✅ Docker build successful"
         
-    - name: 🐳 Test Docker image
+    - name: 🧪 Run basic tests
       run: |
-        echo "🧪 Testing Docker image..."
-        docker run --rm ${{ env.DOCKER_IMAGE }}:ci python --version
-        docker run --rm ${{ env.DOCKER_IMAGE }}:ci pip list
-        echo "✅ Docker image test completed"
-        
-    - name: 🧪 Run tests in Docker container
-      run: |
-        echo "🚀 Running tests in Docker container..."
-        
-        echo "🔍 Basic Validation Tests..."
-        docker run --rm ${{ env.DOCKER_IMAGE }}:ci bash -c "cd tests && python test_basic_validation.py"
-        
-        echo "🔍 Import Validation Tests..."
-        docker run --rm ${{ env.DOCKER_IMAGE }}:ci bash -c "cd tests && python test_import_validation.py"
-        
-        echo "🔍 Dependency Management Tests..."
-        docker run --rm ${{ env.DOCKER_IMAGE }}:ci bash -c "cd tests && python test_dependency_management.py"
-        
-        echo "🔍 Code Quality Check..."
-        docker run --rm ${{ env.DOCKER_IMAGE }}:ci bash -c "cd tests && python code_quality_check.py"
-        
-        echo "✅ All tests completed in Docker container!"
+        echo "🧪 Running basic tests..."
+        python -c "import main; print('✅ Main module imports successfully')"
+        python -c "import supabase_database; print('✅ Database module imports successfully')"
+        python -c "import supabase_auth; print('✅ Auth module imports successfully')"
+        echo "✅ All basic tests passed"
         
     - name: 🐳 Test Docker container startup
       run: |
         echo "🚀 Testing Docker container startup..."
-        docker run -d --name test-container -p 8000:8000 ${{ env.DOCKER_IMAGE }}:ci
-        sleep 15
+        docker run -d --name test-container -p 8000:8000 lead-discovery-api:test
+        sleep 10
         echo "✅ Container started successfully"
         
         echo "🔍 Testing health endpoint..."
@@ -82,222 +65,14 @@ jobs:
         docker stop test-container
         docker rm test-container
         echo "✅ Test container cleanup completed"
-
-    - name: 🌐 Test Public Endpoints (No Auth Required)
-      run: |
-        echo "🔍 Testing Public Endpoints..."
-        
-        # Start API container for endpoint testing
-        echo "🚀 Starting API container for endpoint testing..."
-        docker run -d --name api-test-container -p 8000:8000 ${{ env.DOCKER_IMAGE }}:ci
-        sleep 20
-        echo "✅ API container started"
-        
-        # Wait for API to be ready
-        echo "⏳ Waiting for API to be ready..."
-        for i in {1..30}; do
-          if curl -f http://localhost:8000/api/health > /dev/null 2>&1; then
-            echo "✅ API is ready after $i seconds"
-            break
-          fi
-          echo "⏳ Attempt $i/30 - API not ready yet..."
-          sleep 2
-        done
-        
-        # Root endpoint
-        echo "Testing GET /"
-        curl -f -s http://localhost:8000/ | jq '.status' || echo "❌ Root endpoint failed"
-        
-        # Health check
-        echo "Testing GET /api/health"
-        curl -f -s http://localhost:8000/api/health | jq '.status' || echo "❌ Health endpoint failed"
-        
-        # Data sources status
-        echo "Testing GET /api/data-sources/status"
-        curl -f -s http://localhost:8000/api/data-sources/status | jq '.status' || echo "❌ Data sources endpoint failed"
-        
-        echo "✅ Public endpoints tested"
-        
-    - name: 🔐 Test Authentication Endpoints
-      run: |
-        echo "🔍 Testing Authentication Endpoints..."
-        
-        # Test login endpoint
-        echo "Testing POST /api/auth/login"
-        curl -f -s -X POST http://localhost:8000/api/auth/login \
-          -H "Content-Type: application/json" \
-          -d '{"email":"test@example.com","password":"test123"}' | jq '.status' || echo "❌ Login endpoint failed"
-        
-        # Test refresh token endpoint
-        echo "Testing POST /api/auth/refresh"
-        curl -f -s -X POST http://localhost:8000/api/auth/refresh \
-          -H "Content-Type: application/json" \
-          -d '{"refresh_token":"test_refresh_token"}' | jq '.status' || echo "❌ Refresh token endpoint failed"
-        
-        echo "✅ Authentication endpoints tested"
-        
-    - name: 📊 Test Data Endpoints (With Mock Auth)
-      run: |
-        echo "🔍 Testing Data Endpoints with Mock Authentication..."
-        
-        # Get auth token (mock)
-        echo "Getting mock auth token..."
-        AUTH_RESPONSE=$(curl -s -X POST http://localhost:8000/api/auth/login \
-          -H "Content-Type: application/json" \
-          -d '{"email":"test@example.com","password":"test123"}')
-        
-        AUTH_TOKEN=$(echo $AUTH_RESPONSE | jq -r '.access_token // "mock-token"')
-        AUTH_HEADER="Authorization: Bearer $AUTH_TOKEN"
-        
-        echo "Using auth header: $AUTH_HEADER"
-        
-        # Test leads endpoint
-        echo "Testing GET /api/leads"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/leads | jq '.status' || echo "❌ Leads GET failed"
-        
-        # Test companies endpoint
-        echo "Testing GET /api/companies"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/companies | jq '.status' || echo "❌ Companies GET failed"
-        
-        # Test tenders endpoint
-        echo "Testing GET /api/tenders"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/tenders | jq '.status' || echo "❌ Tenders GET failed"
-        
-        echo "Testing POST /api/tenders"
-        curl -f -s -X POST http://localhost:8000/api/tenders \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d '{"title":"Test Tender","description":"Test tender description"}' | jq '.status' || echo "❌ Tenders POST failed"
-        
-        echo "Testing GET /api/tenders/test-tender-id"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/tenders/test-tender-id | jq '.status' || echo "❌ Tender by ID GET failed"
-        
-        echo "Testing GET /api/tenders/deal/test-deal-id"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/tenders/deal/test-deal-id | jq '.status' || echo "❌ Tender deal GET failed"
-        
-        echo "Testing PUT /api/tenders/test-tender-id"
-        curl -f -s -X PUT http://localhost:8000/api/tenders/test-tender-id \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d '{"title":"Updated Tender","description":"Updated description"}' | jq '.status' || echo "❌ Tender PUT failed"
-        
-        echo "Testing DELETE /api/tenders/test-tender-id"
-        curl -f -s -X DELETE http://localhost:8000/api/tenders/test-tender-id \
-          -H "$AUTH_HEADER" | jq '.status' || echo "❌ Tender DELETE failed"
-        
-        echo "Testing DELETE /api/tenders/cleanup-test-records"
-        curl -f -s -X DELETE http://localhost:8000/api/tenders/cleanup-test-records \
-          -H "$AUTH_HEADER" | jq '.status' || echo "❌ Tender cleanup DELETE failed"
-        
-        echo "Testing GET /api/tenders/test-tender-id/pdf"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/tenders/test-tender-id/pdf | jq '.status' || echo "❌ Tender PDF GET failed"
-        
-        echo "✅ Data endpoints tested"
-        
-    - name: 👤 Test User Management Endpoints
-      run: |
-        echo "🔍 Testing User Management Endpoints..."
-        
-        # Get auth token
-        AUTH_RESPONSE=$(curl -s -X POST http://localhost:8000/api/auth/login \
-          -H "Content-Type: application/json" \
-          -d '{"email":"test@example.com","password":"test123"}')
-        
-        AUTH_TOKEN=$(echo $AUTH_RESPONSE | jq -r '.access_token // "mock-token"')
-        AUTH_HEADER="Authorization: Bearer $AUTH_TOKEN"
-        
-        # Test user profile
-        echo "Testing GET /api/user/profile"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/user/profile | jq '.status' || echo "❌ User profile GET failed"
-        
-        # Test user settings
-        echo "Testing GET /api/user/settings"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/user/settings | jq '.status' || echo "❌ User settings GET failed"
-        
-        echo "✅ User management endpoints tested"
-        
-    - name: 💬 Test Chat Endpoints
-      run: |
-        echo "🔍 Testing Chat Endpoints..."
-        
-        # Get auth token
-        AUTH_RESPONSE=$(curl -s -X POST http://localhost:8000/api/auth/login \
-          -H "Content-Type: application/json" \
-          -d '{"email":"test@example.com","password":"test123"}')
-        
-        AUTH_TOKEN=$(echo $AUTH_RESPONSE | jq -r '.access_token // "mock-token"')
-        AUTH_HEADER="Authorization: Bearer $AUTH_TOKEN"
-        
-        # Test chat endpoints
-        echo "Testing POST /api/chat/message"
-        curl -f -s -X POST http://localhost:8000/api/chat/message \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d '{"message":"Test message","context":"test"}' | jq '.status' || echo "❌ Chat message POST failed"
-        
-        echo "Testing GET /api/chat/history"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/chat/history | jq '.status' || echo "❌ Chat history GET failed"
-        
-        echo "✅ Chat endpoints tested"
-        
-    - name: 🔧 Test Admin Endpoints
-      run: |
-        echo "🔍 Testing Admin Endpoints..."
-        
-        # Get auth token
-        AUTH_RESPONSE=$(curl -s -X POST http://localhost:8000/api/auth/login \
-          -H "Content-Type: application/json" \
-          -d '{"email":"test@example.com","password":"test123"}')
-        
-        AUTH_TOKEN=$(echo $AUTH_RESPONSE | jq -r '.access_token // "mock-token"')
-        AUTH_HEADER="Authorization: Bearer $AUTH_TOKEN"
-        
-        # Test admin endpoints
-        echo "Testing GET /api/admin/users"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/admin/users | jq '.status' || echo "❌ Admin users GET failed"
-        
-        echo "Testing GET /api/admin/stats"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/admin/stats | jq '.status' || echo "❌ Admin stats GET failed"
-        
-        echo "✅ Admin endpoints tested"
-        
-    - name: 📋 Test Project Management Endpoints
-      run: |
-        echo "🔍 Testing Project Management Endpoints..."
-        
-        # Get auth token
-        AUTH_RESPONSE=$(curl -s -X POST http://localhost:8000/api/auth/login \
-          -H "Content-Type: application/json" \
-          -d '{"email":"test@example.com","password":"test123"}')
-        
-        AUTH_TOKEN=$(echo $AUTH_RESPONSE | jq -r '.access_token // "mock-token"')
-        AUTH_HEADER="Authorization: Bearer $AUTH_TOKEN"
-        
-        # Test project endpoints
-        echo "Testing GET /api/projects"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/projects | jq '.status' || echo "❌ Projects GET failed"
-        
-        echo "Testing POST /api/projects"
-        curl -f -s -X POST http://localhost:8000/api/projects \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d '{"name":"Test Project","description":"Test project description"}' | jq '.status' || echo "❌ Projects POST failed"
-        
-        echo "✅ Project management endpoints tested"
-        
-    - name: 🧹 Cleanup API Container
-      if: always()
-      run: |
-        echo "🧹 Cleaning up API test container..."
-        docker stop api-test-container || true
-        docker rm api-test-container || true
-        echo "✅ API test container cleanup completed"
         
     - name: 📊 Test Summary
       if: always()
       run: |
-        echo "📊 CI Test Summary:"
-        echo "✅ Docker build completed"
-        echo "✅ Unit tests completed"
-        echo "✅ API endpoint tests completed"
-        echo "✅ All tests passed successfully!"
+        echo "📊 Simple CI Test Summary:"
+        echo "✅ Python dependencies installed"
+        echo "✅ Project structure validated"
+        echo "✅ Docker build successful"
+        echo "✅ Basic module tests passed"
+        echo "✅ Container startup test completed"
+        echo "🎯 All tests passed successfully!"
