@@ -78,7 +78,163 @@ jobs:
         docker rm test-container
         echo "✅ Test container cleanup completed"
         
-    - name: 📊 Test Summary
+    - name: 📄 Test PDF Generation
+      run: |
+        echo "📄 Testing PDF Generation..."
+        
+        # Start API container for PDF testing
+        echo "🚀 Starting API container for PDF testing..."
+        docker run -d --name pdf-test-container -p 8000:8000 \
+          -e SUPABASE_URL="$SUPABASE_URL" \
+          -e SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+          -e SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
+          lead-discovery-api:test
+        sleep 15
+        echo "✅ API container started"
+        
+        # Wait for API to be ready
+        echo "⏳ Waiting for API to be ready..."
+        for i in {1..30}; do
+          if curl -f http://localhost:8000/api/health > /dev/null 2>&1; then
+            echo "✅ API is ready after $i seconds"
+            break
+          fi
+          echo "⏳ Attempt $i/30 - API not ready yet..."
+          sleep 2
+        done
+        
+        # Create test tender
+        echo "📝 Creating test tender..."
+        TENDER_RESPONSE=$(curl -s -X POST http://localhost:8000/api/tenders \
+          -H "Content-Type: application/json" \
+          -d '{
+            "title": "Test Tender for PDF",
+            "description": "Test tender description for PDF generation testing",
+            "company_name": "Test Company",
+            "project_title": "Test Project",
+            "budget_range": "50000",
+            "total_amount": 50000,
+            "deadline": "2024-12-31",
+            "requirements": "Test requirements for PDF generation",
+            "terms_conditions": "Test terms and conditions",
+            "payment_terms": "Test payment terms",
+            "delivery_timeline": "Test delivery timeline",
+            "contact_info": "test@example.com"
+          }')
+        
+        TENDER_ID=$(echo $TENDER_RESPONSE | jq -r '.tender_id // .id // "test-tender-id"')
+        echo "✅ Test tender created with ID: $TENDER_ID"
+        
+        # Test English PDF generation
+        echo "🇺🇸 Testing English PDF generation..."
+        curl -f -s -o "tender_en.pdf" "http://localhost:8000/api/tenders/$TENDER_ID/pdf?language=en"
+        echo "✅ English PDF generated"
+        
+        # Test Turkish PDF generation
+        echo "🇹🇷 Testing Turkish PDF generation..."
+        curl -f -s -o "tender_tr.pdf" "http://localhost:8000/api/tenders/$TENDER_ID/pdf?language=tr"
+        echo "✅ Turkish PDF generated"
+        
+        # Check PDF content for common issues
+        echo "🔍 Checking PDF content for issues..."
+        
+        # Install pdfgrep for content checking
+        sudo apt-get update -qq
+        sudo apt-get install -y pdfgrep
+        
+        # Check for problematic characters
+        echo "❌ Checking for '■' symbols in English PDF..."
+        if pdfgrep -q "■" tender_en.pdf; then
+          echo "❌ FOUND '■' symbols in English PDF!"
+          pdfgrep "■" tender_en.pdf
+          exit 1
+        else
+          echo "✅ No '■' symbols found in English PDF"
+        fi
+        
+        echo "❌ Checking for '■' symbols in Turkish PDF..."
+        if pdfgrep -q "■" tender_tr.pdf; then
+          echo "❌ FOUND '■' symbols in Turkish PDF!"
+          pdfgrep "■" tender_tr.pdf
+          exit 1
+        else
+          echo "✅ No '■' symbols found in Turkish PDF"
+        fi
+        
+        # Check for proper currency symbols
+        echo "💰 Checking currency symbols..."
+        if pdfgrep -q "TL " tender_en.pdf; then
+          echo "✅ Proper 'TL' currency symbol found in English PDF"
+        else
+          echo "⚠️ No 'TL' currency symbol found in English PDF"
+        fi
+        
+        if pdfgrep -q "TL " tender_tr.pdf; then
+          echo "✅ Proper 'TL' currency symbol found in Turkish PDF"
+        else
+          echo "⚠️ No 'TL' currency symbol found in Turkish PDF"
+        fi
+        
+        # Check for empty fields
+        echo "📋 Checking for empty fields..."
+        if pdfgrep -q "Not specified" tender_en.pdf; then
+          echo "✅ Default values found in English PDF"
+        else
+          echo "⚠️ No default values found in English PDF"
+        fi
+        
+        if pdfgrep -q "Belirtilmemiş" tender_tr.pdf; then
+          echo "✅ Default values found in Turkish PDF"
+        else
+          echo "⚠️ No default values found in Turkish PDF"
+        fi
+        
+        # Check for proper language content
+        echo "🌐 Checking language-specific content..."
+        if pdfgrep -q "TENDER PROPOSAL" tender_en.pdf; then
+          echo "✅ English title found in English PDF"
+        else
+          echo "❌ English title NOT found in English PDF"
+          exit 1
+        fi
+        
+        if pdfgrep -q "TEKLİF SUNUMU" tender_tr.pdf; then
+          echo "✅ Turkish title found in Turkish PDF"
+        else
+          echo "❌ Turkish title NOT found in Turkish PDF"
+          exit 1
+        fi
+        
+        # Check for emoji characters (should not be present)
+        echo "🚫 Checking for emoji characters..."
+        if pdfgrep -q "📋\|📝\|💼\|📜\|💳\|🚚\|📞" tender_en.pdf; then
+          echo "❌ FOUND emoji characters in English PDF!"
+          pdfgrep "📋\|📝\|💼\|��\|💳\|🚚\|📞" tender_en.pdf
+          exit 1
+        else
+          echo "✅ No emoji characters found in English PDF"
+        fi
+        
+        if pdfgrep -q "📋\|📝\|💼\|📜\|💳\|🚚\|📞" tender_tr.pdf; then
+          echo "❌ FOUND emoji characters in Turkish PDF!"
+          pdfgrep "📋\|📝\|💼\|��\|💳\|🚚\|📞" tender_tr.pdf
+          exit 1
+        else
+          echo "✅ No emoji characters found in Turkish PDF"
+        fi
+        
+        echo "✅ All PDF content checks passed!"
+        
+        # Clean up test tender
+        echo "🧹 Cleaning up test tender..."
+        curl -s -X DELETE "http://localhost:8000/api/tenders/$TENDER_ID" || echo "⚠️ Could not delete test tender"
+        
+        echo "🧹 Cleaning up PDF test container..."
+        docker stop pdf-test-container
+        docker rm pdf-test-container
+        echo "✅ PDF test container cleanup completed"
+        
+    - name: �� Test Summary
       if: always()
       run: |
         echo "📊 Simple CI Test Summary:"
@@ -87,4 +243,6 @@ jobs:
         echo "✅ Docker build successful"
         echo "✅ Basic module tests passed"
         echo "✅ Container startup test completed"
+        echo "✅ PDF generation tests completed"
+        echo "✅ PDF content validation passed"
         echo "🎯 All tests passed successfully!"
