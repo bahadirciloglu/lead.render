@@ -1113,6 +1113,8 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
                 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",  # Linux DejaVu
                 "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",  # Linux Liberation
                 "/Windows/Fonts/arial.ttf",  # Windows Arial
+                "/System/Library/Fonts/Supplemental/Arial.ttf",  # macOS Arial Supplemental
+                "/System/Library/Fonts/Supplemental/Helvetica.ttc",  # macOS Helvetica Supplemental
             ]
             
             font_registered = False
@@ -1202,13 +1204,13 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
                 'deadline': 'Son Tarih:',
                 'budget_range': 'Bütçe Aralığı:',
                 'total_amount': 'Toplam Tutar:',
-                'project_description': '📋 Proje Açıklaması',
-                'project_requirements': '📝 Proje Gereksinimleri',
-                'products_services': '💼 Ürün ve Hizmetler',
-                'terms_conditions': '📜 Şartlar ve Koşullar',
-                'payment_terms': '💳 Ödeme Şartları',
-                'delivery_timeline': '🚚 Teslimat Zamanı',
-                'contact_info': '📞 İletişim Bilgileri',
+                'project_description': 'Proje Açıklaması',
+                'project_requirements': 'Proje Gereksinimleri',
+                'products_services': 'Ürün ve Hizmetler',
+                'terms_conditions': 'Şartlar ve Koşullar',
+                'payment_terms': 'Ödeme Şartları',
+                'delivery_timeline': 'Teslimat Zamanı',
+                'contact_info': 'İletişim Bilgileri',
                 'confidential': 'Bu teklif gizli ve özeldir'
             }
         else:
@@ -1221,13 +1223,13 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
                 'deadline': 'Proposal Deadline:',
                 'budget_range': 'Budget Range:',
                 'total_amount': 'Total Amount:',
-                'project_description': '📋 Project Description',
+                'project_description': 'Project Description',
                 'project_requirements': '📝 Project Requirements',
-                'products_services': '💼 Products & Services',
-                'terms_conditions': '📜 Terms & Conditions',
-                'payment_terms': '💳 Payment Terms',
-                'delivery_timeline': '🚚 Delivery Timeline',
-                'contact_info': '📞 Contact Information',
+                'products_services': 'Products & Services',
+                'terms_conditions': 'Terms & Conditions',
+                'payment_terms': 'Payment Terms',
+                'delivery_timeline': 'Delivery Timeline',
+                'contact_info': 'Contact Information',
                 'confidential': 'This proposal is confidential and proprietary'
             }
         
@@ -1243,9 +1245,9 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
         summary_data = [
             [content['project_title'], tender_data.get('project_title', 'N/A')],
             [content['company'], tender_data.get('company_name', 'N/A')],
-            [content['deadline'], tender_data.get('deadline', 'N/A')],
+            [content['deadline'], tender_data.get('deadline', 'Not specified')],
             [content['budget_range'], tender_data.get('budget_range', 'N/A')],
-            [content['total_amount'], f"₺{tender_data.get('total_amount', 0):,.2f}"]
+            [content['total_amount'], f"TL {tender_data.get('total_amount', 0):,.2f}"]
         ]
         
         summary_table = Table(summary_data, colWidths=[2.2*inch, 3.8*inch])
@@ -1269,13 +1271,13 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
         # Project Description
         if tender_data.get('description'):
             story.append(Paragraph(content['project_description'], heading_style))
-            story.append(Paragraph(tender_data.get('description', ''), normal_style))
+            story.append(Paragraph(tender_data.get('description', 'No description provided'), normal_style))
             story.append(Spacer(1, 15))
         
         # Requirements
         if tender_data.get('requirements'):
             story.append(Paragraph(content['project_requirements'], heading_style))
-            story.append(Paragraph(tender_data.get('requirements', ''), normal_style))
+            story.append(Paragraph(tender_data.get('requirements', 'No specific requirements'), normal_style))
             story.append(Spacer(1, 15))
         
         # Products/Services
@@ -1305,12 +1307,12 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
                         name,
                         desc[:50] + '...' if len(desc) > 50 else desc,  # Truncate long descriptions
                         str(qty),
-                        f"₺{unit_price:,.2f}",
-                        f"₺{total_price:,.2f}"
+                        f"TL {unit_price:,.2f}",
+                        f"TL {total_price:,.2f}"
                     ])
             
             # Add total row
-            ps_data.append(['', '', '', 'TOTAL:', f"₺{total_amount:,.2f}"])
+            ps_data.append(['', '', '', 'TOTAL:', f"TL {total_amount:,.2f}"])
             
             ps_table = Table(ps_data, colWidths=[1.3*inch, 2.2*inch, 0.6*inch, 1*inch, 1*inch])
             ps_table.setStyle(TableStyle([
@@ -1335,25 +1337,25 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
         # Terms & Conditions
         if tender_data.get('terms_conditions'):
             story.append(Paragraph(content['terms_conditions'], heading_style))
-            story.append(Paragraph(tender_data.get('terms_conditions', ''), normal_style))
+            story.append(Paragraph(tender_data.get('terms_conditions', 'Standard terms and conditions apply'), normal_style))
             story.append(Spacer(1, 15))
         
         # Payment Terms
         if tender_data.get('payment_terms'):
             story.append(Paragraph(content['payment_terms'], heading_style))
-            story.append(Paragraph(tender_data.get('payment_terms', ''), normal_style))
+            story.append(Paragraph(tender_data.get('payment_terms', 'Payment terms to be discussed'), normal_style))
             story.append(Spacer(1, 15))
         
         # Delivery Timeline
         if tender_data.get('delivery_timeline'):
             story.append(Paragraph(content['delivery_timeline'], heading_style))
-            story.append(Paragraph(tender_data.get('delivery_timeline', ''), normal_style))
+            story.append(Paragraph(tender_data.get('delivery_timeline', 'Timeline to be determined'), normal_style))
             story.append(Spacer(1, 15))
         
         # Contact Information
         if tender_data.get('contact_info'):
             story.append(Paragraph(content['contact_info'], heading_style))
-            story.append(Paragraph(tender_data.get('contact_info', ''), normal_style))
+            story.append(Paragraph(tender_data.get('contact_info', 'Contact information not provided'), normal_style))
             story.append(Spacer(1, 20))
         
         story.append(Spacer(1, 15))        # Footer Section
@@ -1583,7 +1585,7 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                     </tr>
                     <tr>
                         <td>{content['deadline']}</td>
-                        <td>{tender_data.get('deadline', 'N/A')}</td>
+                        <td>{tender_data.get('deadline', 'Not specified')}</td>
                     </tr>
                     <tr>
                         <td>{content['budget_range']}</td>
@@ -1591,7 +1593,7 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                     </tr>
                     <tr>
                         <td>{content['total_amount']}</td>
-                        <td>₺{tender_data.get('total_amount', 0):,.2f}</td>
+                        <td>TL {tender_data.get('total_amount', 0):,.2f}</td>
                     </tr>
                 </table>
             </div>
@@ -1600,14 +1602,14 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
         # Add sections
         if tender_data.get('description'):
             html_content += f"""
-            <div class="section-title">📋 {content['project_description']}</div>
-            <div class="content-text">{tender_data.get('description', '')}</div>
+            <div class="section-title"> {content['project_description']}</div>
+            <div class="content-text">{tender_data.get('description', 'No description provided')}</div>
             """
         
         if tender_data.get('requirements'):
             html_content += f"""
-            <div class="section-title">📝 {content['project_requirements']}</div>
-            <div class="content-text">{tender_data.get('requirements', '')}</div>
+            <div class="section-title"> {content['project_requirements']}</div>
+            <div class="content-text">{tender_data.get('requirements', 'No specific requirements')}</div>
             """
         
         # Products/Services table
@@ -1621,7 +1623,7 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                 total_text = 'TOTAL'
             
             html_content += f"""
-            <div class="section-title">💼 {content['products_services']}</div>
+            <div class="section-title"> {content['products_services']}</div>
             <table class="products-table">
                 <tr>
                     <th>{ps_headers[0]}</th>
@@ -1647,8 +1649,8 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                         <td>{name}</td>
                         <td>{desc}</td>
                         <td>{qty}</td>
-                        <td>₺{unit_price:,.2f}</td>
-                        <td>₺{total_price:,.2f}</td>
+                        <td>TL {unit_price:,.2f}</td>
+                        <td>TL {total_price:,.2f}</td>
                     </tr>
                     """
             
@@ -1663,26 +1665,26 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
         # Other sections
         if tender_data.get('terms_conditions'):
             html_content += f"""
-            <div class="section-title">📜 {content['terms_conditions']}</div>
-            <div class="content-text">{tender_data.get('terms_conditions', '')}</div>
+            <div class="section-title"> {content['terms_conditions']}</div>
+            <div class="content-text">{tender_data.get('terms_conditions', 'Standard terms and conditions apply')}</div>
             """
         
         if tender_data.get('payment_terms'):
             html_content += f"""
-            <div class="section-title">💳 {content['payment_terms']}</div>
-            <div class="content-text">{tender_data.get('payment_terms', '')}</div>
+            <div class="section-title"> {content['payment_terms']}</div>
+            <div class="content-text">{tender_data.get('payment_terms', 'Payment terms to be discussed')}</div>
             """
         
         if tender_data.get('delivery_timeline'):
             html_content += f"""
-            <div class="section-title">🚚 {content['delivery_timeline']}</div>
-            <div class="content-text">{tender_data.get('delivery_timeline', '')}</div>
+            <div class="section-title"> {content['delivery_timeline']}</div>
+            <div class="content-text">{tender_data.get('delivery_timeline', 'Timeline to be determined')}</div>
             """
         
         if tender_data.get('contact_info'):
             html_content += f"""
-            <div class="section-title">📞 {content['contact_info']}</div>
-            <div class="content-text">{tender_data.get('contact_info', '')}</div>
+            <div class="section-title"> {content['contact_info']}</div>
+            <div class="content-text">{tender_data.get('contact_info', 'Contact information not provided')}</div>
             """
         
         # Footer
