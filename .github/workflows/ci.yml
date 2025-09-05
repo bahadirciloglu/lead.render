@@ -13,6 +13,9 @@ env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
   SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  # API Keys from GitHub Secrets
+  GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
 jobs:
   test:
@@ -53,6 +56,8 @@ jobs:
         echo "Environment variables:"
         echo "SUPABASE_URL: $SUPABASE_URL"
         echo "SUPABASE_ANON_KEY: $SUPABASE_ANON_KEY"
+        echo "GOOGLE_API_KEY: $GOOGLE_API_KEY"
+        echo "OPENROUTER_API_KEY: $OPENROUTER_API_KEY"
         
         python -c "import main; print('✅ Main module imports successfully')"
         python -c "import supabase_database; print('✅ Database module imports successfully')"
@@ -66,6 +71,8 @@ jobs:
           -e SUPABASE_URL="$SUPABASE_URL" \
           -e SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
           -e SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
+          -e GOOGLE_API_KEY="$GOOGLE_API_KEY" \
+          -e OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
           lead-discovery-api:test
         sleep 10
         echo "✅ Container started successfully"
@@ -88,6 +95,8 @@ jobs:
           -e SUPABASE_URL="$SUPABASE_URL" \
           -e SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
           -e SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
+          -e GOOGLE_API_KEY="$GOOGLE_API_KEY" \
+          -e OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
           lead-discovery-api:test
         sleep 30
         echo "✅ API container started"
