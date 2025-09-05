@@ -132,6 +132,7 @@ async def jwt_token_validation_middleware(request, call_next):
 
     # Public endpoints that don't require authentication
     public_endpoints = [
+        "/",
         "/api/health",
         "/api/auth/login",
         "/api/auth/register",
