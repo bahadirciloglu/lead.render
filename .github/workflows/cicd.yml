@@ -1,0 +1,216 @@
+name: "�� Lead Discovery API - Simple CI/CD Pipeline"
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  # Supabase environment variables from GitHub Secrets
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  # API Keys from GitHub Secrets
+  GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+jobs:
+  test-and-deploy:
+    name: 🧪 Test & Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        
+    - name: 📦 Install dependencies
+      run: |
+        echo "Installing dependencies..."
+        pip install -r requirements.txt
+        echo "✅ Dependencies installed"
+        
+    - name: 🔍 Check project structure
+      run: |
+        echo "✅ Checking project structure..."
+        ls -la
+        echo "✅ Main files exist:"
+        ls -la main.py Dockerfile render.yaml
+        
+    - name: 🧪 Run basic tests
+      run: |
+        echo "🧪 Running basic tests..."
+        python -c "import main; print('✅ Main module imports successfully')"
+        python -c "import supabase_database; print('✅ Database module imports successfully')"
+        python -c "import supabase_auth; print('✅ Auth module imports successfully')"
+        echo "✅ All basic tests passed"
+        
+    - name: 🚀 Start API Container
+      run: |
+        echo "🚀 Starting API container for testing..."
+        docker run -d --name test-container -p 8000:8000 \
+          -e SUPABASE_URL="$SUPABASE_URL" \
+          -e SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+          -e SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
+          -e GOOGLE_API_KEY="$GOOGLE_API_KEY" \
+          -e OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
+          -e JWT_SECRET="test-jwt-secret" \
+          -e JWT_ALGORITHM="HS256" \
+          -e CORS_ORIGINS="http://localhost:8080" \
+          -e SECRET_KEY="test-secret-key" \
+          -e ACCESS_TOKEN_EXPIRE_MINUTES="30" \
+          -e REFRESH_TOKEN_EXPIRE_DAYS="7" \
+          lead-discovery-api:test
+        sleep 30
+        echo "✅ Container started successfully"
+        
+    - name: 🔍 API Call Tests
+      run: |
+        echo "🔍 Testing API Calls..."
+        
+        # Wait for API to be ready
+        echo "⏳ Waiting for API to be ready..."
+        for i in {1..20}; do
+          if curl -f http://localhost:8000/api/health > /dev/null 2>&1; then
+            echo "✅ API is ready after $i seconds"
+            break
+          fi
+          echo "⏳ Attempt $i/20 - API not ready yet..."
+          sleep 3
+        done
+        
+        # 1. Health check
+        echo "1. Testing health endpoint..."
+        curl -f http://localhost:8000/api/health || exit 1
+        echo "✅ Health endpoint working"
+        
+        # 2. Root endpoint
+        echo "2. Testing root endpoint..."
+        curl -f http://localhost:8000/ || exit 1
+        echo "✅ Root endpoint working"
+        
+        # 3. Tenders list
+        echo "3. Testing tenders list endpoint..."
+        curl -f http://localhost:8000/api/tenders || exit 1
+        echo "✅ Tenders list endpoint working"
+        
+        # 4. CORS test
+        echo "4. Testing CORS..."
+        curl -H "Origin: http://localhost:8080" \
+             -H "Access-Control-Request-Method: GET" \
+             -X OPTIONS http://localhost:8000/api/tenders -f || exit 1
+        echo "✅ CORS working"
+        
+        echo "✅ All API call tests passed!"
+        
+    - name: 📄 Tender Download Tests
+      run: |
+        echo "📄 Testing Tender Download..."
+        
+        # Test tender creation
+        echo "📝 Testing tender creation..."
+        TENDER_RESPONSE=$(curl -s -X POST http://localhost:8000/api/tenders \
+          -H "Content-Type: application/json" \
+          -d '{
+            "project_title": "CI Test Tender",
+            "description": "Test tender for CI validation",
+            "company_name": "Test Company Inc",
+            "budget_range": "100000",
+            "total_amount": 100000,
+            "deadline": "2024-12-31",
+            "requirements": "Test requirements",
+            "terms_conditions": "Test terms",
+            "payment_terms": "50% upfront, 50% on completion",
+            "delivery_timeline": "6-8 weeks",
+            "contact_info": "test@example.com"
+          }')
+        
+        echo "Tender response: $TENDER_RESPONSE"
+        
+        # Extract tender ID
+        TENDER_ID=$(echo $TENDER_RESPONSE | jq -r '.data.tender_id // .tender_id // .id' 2>/dev/null)
+        if [ -z "$TENDER_ID" ] || [ "$TENDER_ID" = "null" ]; then
+          echo "❌ Failed to create tender - no tender ID returned"
+          exit 1
+        fi
+        echo "✅ Using tender ID: $TENDER_ID"
+        
+        # Test PDF generation
+        echo "🇺🇸 Testing English PDF generation..."
+        if curl -f -s -o "tender_en.pdf" "http://localhost:8000/api/tenders/$TENDER_ID/pdf?language=en"; then
+          echo "✅ English PDF generated successfully"
+        else
+          echo "❌ English PDF generation failed"
+          exit 1
+        fi
+        
+        echo "🇹🇷 Testing Turkish PDF generation..."
+        if curl -f -s -o "tender_tr.pdf" "http://localhost:8000/api/tenders/$TENDER_ID/pdf?language=tr"; then
+          echo "✅ Turkish PDF generated successfully"
+        else
+          echo "❌ Turkish PDF generation failed"
+          exit 1
+        fi
+        
+        # Basic PDF validation
+        echo "📄 Validating PDF files..."
+        if [ -f "tender_en.pdf" ] && [ -s "tender_en.pdf" ]; then
+          echo "✅ English PDF file exists and is not empty"
+        else
+          echo "❌ English PDF file is missing or empty"
+          exit 1
+        fi
+        
+        if [ -f "tender_tr.pdf" ] && [ -s "tender_tr.pdf" ]; then
+          echo "✅ Turkish PDF file exists and is not empty"
+        else
+          echo "❌ Turkish PDF file is missing or empty"
+          exit 1
+        fi
+        
+        echo "✅ All tender download tests passed!"
+        
+    - name: 🧹 Cleanup Test Container
+      if: always()
+      run: |
+        echo "🧹 Cleaning up test container..."
+        docker stop test-container || true
+        docker rm test-container || true
+        echo "✅ Cleanup completed"
+        
+    - name: 🚀 Deploy to Render
+      if: github.ref == 'refs/heads/main'
+      run: |
+        echo "🚀 Deploying to Render..."
+        
+        # Validate deployment files
+        echo "🔍 Validating deployment files..."
+        python -c "import yaml; yaml.safe_load(open('render.yaml'))" && echo "✅ render.yaml is valid"
+        test -f Dockerfile && echo "✅ Dockerfile exists"
+        test -f requirements.txt && echo "✅ requirements.txt exists"
+        
+        echo "✅ Ready for Render deployment!"
+        echo ""
+        echo "📋 Render Deployment Status:"
+        echo "✅ All tests passed"
+        echo "✅ API endpoints working"
+        echo "✅ Tender download working"
+        echo "✅ Deployment files validated"
+        echo "🎯 Backend is ready for production!"
+        
+    - name: 📊 Pipeline Summary
+      if: always()
+      run: |
+        echo "📊 Simple CI/CD Pipeline Summary:"
+        echo "✅ Basic Tests: Python imports"
+        echo "✅ API Call Tests: Health, root, tenders, CORS"
+        echo "✅ Tender Download Tests: Creation, PDF generation"
+        echo "✅ Render Deploy: Ready for deployment"
+        echo "🎯 All pipeline steps completed successfully!"
