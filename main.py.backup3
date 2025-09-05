@@ -850,36 +850,14 @@ async def add_to_pipeline(company_data: dict):
 
 @app.post("/api/tenders")
 async def create_tender(tender_data: dict):
-    """Create or update tender proposal"""
+    """Create a new tender proposal"""
     try:
-        print(f"📄 Creating/updating tender with data: {tender_data}")
+        print(f"📄 Creating tender with data: {tender_data}")
         
-        # Check if tender already exists for this deal_id
-        deal_id = tender_data.get("deal_id")
-        existing_tender = None
-        if deal_id:
-            existing_tenders = db.get_tenders(filters={"deal_id": deal_id}, limit=1)
-            if existing_tenders and len(existing_tenders) > 0:
-                existing_tender = existing_tenders[0]
-                print("📄 Found existing tender:", existing_tender.get("id"))
-        
-        # If tender exists, update it; otherwise create new
-        if existing_tender:
-            print("📄 Updating existing tender:", existing_tender.get("id"))
-            success = db.update_tender(existing_tender["id"], tender_data)
-            if success:
-                # Get updated tender
-                updated_tender = db.get_tender(existing_tender["id"])
-                tender_entry = updated_tender
-                print("📄 Tender updated successfully")
-            else:
-                raise Exception("Failed to update tender")
-        else:
-            print("📄 Creating new tender")
-            # Create new tender
-            tender_entry = db.create_tender(tender_data)
-            print(f"📄 Tender entry from DB: {tender_entry}")
-            print(f"📄 Tender entry type: {type(tender_entry)}")        
+        # Add tender to database
+        tender_entry = db.create_tender(tender_data)
+        print(f"📄 Tender entry from DB: {tender_entry}")
+        print(f"📄 Tender entry type: {type(tender_entry)}")
         
         if tender_entry:
             tender_id = tender_entry.get("id")
@@ -887,7 +865,7 @@ async def create_tender(tender_data: dict):
             
             response = {
                 "status": "success",
-                "message": "Tender proposal saved successfully",
+                "message": "Tender proposal created successfully",
                 "data": {"tender_id": tender_id, "tender": tender_entry}
             }
             print(f"📄 Final response: {response}")
@@ -914,30 +892,6 @@ async def get_tenders():
         }
     except Exception as e:
         print(f"❌ Get tenders error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/tenders/{tender_id}")
-
-@app.get("/api/tenders/deal/{deal_id}")
-async def get_tender_by_deal_id(deal_id: str):
-    """Get tender by deal ID"""
-    try:
-        print(f"📄 Getting tender for deal ID: {deal_id}")
-        tenders = db.get_tenders(filters={"deal_id": deal_id}, limit=1)
-        if tenders and len(tenders) > 0:
-            return {
-                "status": "success",
-                "message": "Tender retrieved successfully",
-                "data": tenders[0]
-            }
-        else:
-            return {
-                "status": "not_found",
-                "message": "No tender found for this deal",
-                "data": None
-            }
-    except Exception as e:
-        print(f"❌ Get tender by deal ID error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/tenders/{tender_id}")
@@ -987,65 +941,6 @@ async def delete_tender(tender_id: str):
             raise HTTPException(status_code=404, detail="Tender not found")
     except Exception as e:
         print(f"❌ Delete tender error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.delete("/api/tenders/cleanup-test-records")
-async def cleanup_test_tender_records():
-    """Clean up test tender records, keep only real pipeline leads"""
-    try:
-        print("🧹 Cleaning up test tender records...")
-        
-        # Gerçek pipeline lead ID'leri
-        real_deal_ids = [
-            "d244e329-c047-4a70-b63f-9f81f5e7fd8d",  # bionluk
-            "98290692-5e0a-41c4-8e8a-fd5d58b475d7"   # armut
-        ]
-        
-        # Tüm tender'ları getir
-        all_tenders = db.get_tenders()
-        
-        # Test kayıtlarını belirle
-        test_tenders = [
-            tender for tender in all_tenders 
-            if tender.get("deal_id") not in real_deal_ids
-        ]
-        
-        print(f"📊 Total tenders: {len(all_tenders)}")
-        print(f"🧪 Test records to delete: {len(test_tenders)}")
-        
-        deleted_count = 0
-        for tender in test_tenders:
-            try:
-                success = db.delete_tender(tender["id"])
-                if success:
-                    print(f"🗑️ Deleted: {tender['company_name']} ({tender['id']})")
-                    deleted_count += 1
-                else:
-                    print(f"❌ Failed to delete: {tender['company_name']} ({tender['id']})")
-            except Exception as e:
-                print(f"❌ Error deleting {tender['company_name']}: {str(e)}")
-        
-        # Final durum
-        remaining_tenders = db.get_tenders()
-        
-        return {
-            "status": "success",
-            "message": f"Cleanup completed! Deleted {deleted_count}/{len(test_tenders)} test records",
-            "data": {
-                "deleted_count": deleted_count,
-                "remaining_count": len(remaining_tenders),
-                "remaining_tenders": [
-                    {
-                        "id": t["id"],
-                        "company_name": t["company_name"], 
-                        "deal_id": t.get("deal_id")
-                    } for t in remaining_tenders
-                ]
-            }
-        }
-        
-    except Exception as e:
-        print(f"❌ Cleanup error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/tenders/{tender_id}/pdf")
@@ -1356,7 +1251,7 @@ def generate_pdf_content(tender_data: dict, language: str = 'en') -> bytes:
             story.append(Paragraph(tender_data.get('contact_info', ''), normal_style))
             story.append(Spacer(1, 20))
         
-        story.append(Spacer(1, 15))        # Footer Section
+        # Footer Section
         story.append(Spacer(1, 30))
         
         # Add a line separator
@@ -1558,11 +1453,7 @@ def generate_pdf_content_weasyprint(tender_data: dict, language: str = 'en') -> 
                     color: #6b7280;
                     border-top: 1px solid #e5e7eb;
                     padding-top: 5px;
-                    color: #78350f;
-                    font-size: 8pt;
-                    line-height: 1.4;
-                    margin: 0;
-                }}                }}
+                }}
             </style>
         </head>
         <body>

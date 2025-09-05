@@ -368,15 +368,8 @@ class SupabaseDatabaseManager:
 
     def update_tender(self, tender_id: str, update_data: Dict) -> bool:
         """Tender güncelle"""
-        # Language kolonunu geçici olarak çıkar (database'de yok)
-        update_data_copy = update_data.copy()
-        language = update_data_copy.pop('language', None)  # Language'i çıkar
-        
-        update_data_copy["updated_at"] = datetime.now().isoformat()
-        # Fix empty deadline
-        if "deadline" in update_data_copy and update_data_copy["deadline"] == "":
-            update_data_copy["deadline"] = None
-        result = self.execute_query("tenders", "update", {"id": tender_id}, update_data_copy)
+        update_data["updated_at"] = datetime.now().isoformat()
+        result = self.execute_query("tenders", "update", {"id": tender_id}, update_data)
         return bool(result)
 
     def delete_tender(self, tender_id: str) -> bool:

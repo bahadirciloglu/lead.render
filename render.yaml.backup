@@ -31,19 +31,7 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: JWT_ALGORITHM
-        value: HS256
-      - key: CORS_ORIGINS
-        value: "http://localhost:8080,http://127.0.0.1:8080"
-      - key: SECRET_KEY
-        sync: false
-      - key: ACCESS_TOKEN_EXPIRE_MINUTES
-        value: 30
-      - key: REFRESH_TOKEN_EXPIRE_DAYS
-        value: 7
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     numInstances: 1
 
   # Production Environment
@@ -78,17 +66,29 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: JWT_SECRET
-        sync: false
-      - key: JWT_ALGORITHM
-        value: HS256
-      - key: CORS_ORIGINS
-        value: "http://localhost:8080,http://127.0.0.1:8080"
-      - key: SECRET_KEY
-        sync: false
-      - key: ACCESS_TOKEN_EXPIRE_MINUTES
-        value: 30
-      - key: REFRESH_TOKEN_EXPIRE_DAYS
-        value: 7
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     numInstances: 2
+
+  # Background Worker
+  - type: worker
+    name: lead-discovery-worker
+    env: python
+    plan: starter
+    buildCommand: |
+      chmod +x build_production.sh
+      ./build_production.sh
+    startCommand: python worker.py
+    envVars:
+      - key: ENVIRONMENT
+        value: staging
+      - key: WORKER_MODE
+        value: true
+      - key: LOG_LEVEL
+        value: info
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+    numInstances: 1 

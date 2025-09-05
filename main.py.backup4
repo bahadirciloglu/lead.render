@@ -876,10 +876,11 @@ async def create_tender(tender_data: dict):
                 raise Exception("Failed to update tender")
         else:
             print("📄 Creating new tender")
-            # Create new tender
-            tender_entry = db.create_tender(tender_data)
-            print(f"📄 Tender entry from DB: {tender_entry}")
-            print(f"📄 Tender entry type: {type(tender_entry)}")        
+        
+        # Add tender to database
+        tender_entry = db.create_tender(tender_data)
+        print(f"📄 Tender entry from DB: {tender_entry}")
+        print(f"📄 Tender entry type: {type(tender_entry)}")
         
         if tender_entry:
             tender_id = tender_entry.get("id")
@@ -987,65 +988,6 @@ async def delete_tender(tender_id: str):
             raise HTTPException(status_code=404, detail="Tender not found")
     except Exception as e:
         print(f"❌ Delete tender error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.delete("/api/tenders/cleanup-test-records")
-async def cleanup_test_tender_records():
-    """Clean up test tender records, keep only real pipeline leads"""
-    try:
-        print("🧹 Cleaning up test tender records...")
-        
-        # Gerçek pipeline lead ID'leri
-        real_deal_ids = [
-            "d244e329-c047-4a70-b63f-9f81f5e7fd8d",  # bionluk
-            "98290692-5e0a-41c4-8e8a-fd5d58b475d7"   # armut
-        ]
-        
-        # Tüm tender'ları getir
-        all_tenders = db.get_tenders()
-        
-        # Test kayıtlarını belirle
-        test_tenders = [
-            tender for tender in all_tenders 
-            if tender.get("deal_id") not in real_deal_ids
-        ]
-        
-        print(f"📊 Total tenders: {len(all_tenders)}")
-        print(f"🧪 Test records to delete: {len(test_tenders)}")
-        
-        deleted_count = 0
-        for tender in test_tenders:
-            try:
-                success = db.delete_tender(tender["id"])
-                if success:
-                    print(f"🗑️ Deleted: {tender['company_name']} ({tender['id']})")
-                    deleted_count += 1
-                else:
-                    print(f"❌ Failed to delete: {tender['company_name']} ({tender['id']})")
-            except Exception as e:
-                print(f"❌ Error deleting {tender['company_name']}: {str(e)}")
-        
-        # Final durum
-        remaining_tenders = db.get_tenders()
-        
-        return {
-            "status": "success",
-            "message": f"Cleanup completed! Deleted {deleted_count}/{len(test_tenders)} test records",
-            "data": {
-                "deleted_count": deleted_count,
-                "remaining_count": len(remaining_tenders),
-                "remaining_tenders": [
-                    {
-                        "id": t["id"],
-                        "company_name": t["company_name"], 
-                        "deal_id": t.get("deal_id")
-                    } for t in remaining_tenders
-                ]
-            }
-        }
-        
-    except Exception as e:
-        print(f"❌ Cleanup error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/tenders/{tender_id}/pdf")

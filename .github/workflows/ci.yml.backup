@@ -143,23 +143,7 @@ jobs:
           -d '{"email":"test@example.com","password":"test123"}' | jq '.status' || echo "❌ Login endpoint failed"
         
         # Test register endpoint
-        # Test refresh token endpoint
-        echo "Testing POST /api/auth/refresh"
-        curl -f -s -X POST http://localhost:8000/api/auth/refresh \
-          -H "Content-Type: application/json" \
-          -d "{"refresh_token":"test_refresh_token"}" | jq ".status" || echo "❌ Refresh token endpoint failed"
-        
-        # Test logout endpoint
-        echo "Testing POST /api/auth/logout"
-        curl -f -s -X POST http://localhost:8000/api/auth/logout \
-          -H "Content-Type: application/json" \
-          -d "{"refresh_token":"test_refresh_token"}" | jq ".status" || echo "❌ Logout endpoint failed"
-        
-        # Test change password endpoint
-        echo "Testing POST /api/auth/change-password"
-        curl -f -s -X POST http://localhost:8000/api/auth/change-password \
-          -H "Content-Type: application/json" \
-          -d "{"old_password":"oldpass","new_password":"newpass"}" | jq ".status" || echo "❌ Change password endpoint failed"        echo "Testing POST /api/auth/register"
+        echo "Testing POST /api/auth/register"
         curl -f -s -X POST http://localhost:8000/api/auth/register \
           -H "Content-Type: application/json" \
           -d '{"email":"newuser@example.com","password":"newpass123","full_name":"Test User"}' | jq '.status' || echo "❌ Register endpoint failed"
@@ -203,24 +187,7 @@ jobs:
         curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/companies | jq '.status' || echo "❌ Companies GET failed"
         
         # Test tenders endpoints
-        # Test chat endpoints
-        echo "Testing POST /api/chat"
-        curl -f -s -X POST http://localhost:8000/api/chat \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d "{"message":"Test message"}" | jq ".status" || echo "❌ Chat POST failed"
-        
-        # Test users endpoints
-        echo "Testing GET /api/users"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/users | jq ".status" || echo "❌ Users GET failed"
-        
-        # Test auth profile endpoint
-        echo "Testing GET /api/auth/profile"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/auth/profile | jq ".status" || echo "❌ Auth profile GET failed"
-        
-        # Test chat history endpoints
-        echo "Testing GET /api/chat/history"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/chat/history | jq ".status" || echo "❌ Chat history GET failed"        echo "Testing GET /api/tenders"
+        echo "Testing GET /api/tenders"
         curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/tenders | jq '.status' || echo "❌ Tenders GET failed"
         
         echo "✅ Data endpoints tested"
@@ -244,19 +211,7 @@ jobs:
           curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/admin/users | jq '.status' || echo "❌ Admin users GET failed"
           
           # Test admin setup endpoint
-        # Test admin create user endpoint
-        echo "Testing POST /api/admin/create-user"
-        curl -f -s -X POST http://localhost:8000/api/admin/create-user \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d "{"email":"newadmin@test.com","password":"adminpass","full_name":"New Admin"}" | jq ".status" || echo "❌ Admin create user POST failed"
-        
-        # Test admin add existing user endpoint
-        echo "Testing POST /api/admin/add-existing-user"
-        curl -f -s -X POST http://localhost:8000/api/admin/add-existing-user \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d "{"email":"existing@test.com"}" | jq ".status" || echo "❌ Admin add existing user POST failed"          echo "Testing POST /api/admin/setup"
+          echo "Testing POST /api/admin/setup"
           curl -f -s -X POST http://localhost:8000/api/admin/setup \
             -H "Content-Type: application/json" \
             -H "$AUTH_HEADER" \
@@ -279,57 +234,7 @@ jobs:
           AUTH_HEADER="Authorization: Bearer $TOKEN"
           
           # Test project management weeks endpoint
-        # Test project management weeks POST endpoint
-        echo "Testing POST /api/project-management/weeks"
-        curl -f -s -X POST http://localhost:8000/api/project-management/weeks \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d "{"week_number":1,"executive_summary":"Test week summary"}" | jq ".status" || echo "❌ Project management weeks POST failed"
-        
-        # Test users profile endpoint
-        echo "Testing GET /api/users/profile"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/users/profile | jq ".status" || echo "❌ Users profile GET failed"
-        
-        # Test companies POST endpoint
-        echo "Testing POST /api/companies"
-        curl -f -s -X POST http://localhost:8000/api/companies \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d "{"name":"Test Company","industry":"Technology"}" | jq ".status" || echo "❌ Companies POST failed"
-        
-        # Test tenders POST endpoint
-        # Test tender by ID endpoint
-        echo "Testing GET /api/tenders/test-tender-id"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/tenders/test-tender-id | jq ".status" || echo "❌ Tender by ID GET failed"
-        
-        # Test tender deal endpoint
-        echo "Testing GET /api/tenders/deal/test-deal-id"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/tenders/deal/test-deal-id | jq ".status" || echo "❌ Tender deal GET failed"
-        
-        # Test tender update endpoint
-        echo "Testing PUT /api/tenders/test-tender-id"
-        curl -f -s -X PUT http://localhost:8000/api/tenders/test-tender-id \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d "{"title":"Updated Tender","description":"Updated description"}" | jq ".status" || echo "❌ Tender PUT failed"
-        
-        # Test tender delete endpoint
-        echo "Testing DELETE /api/tenders/test-tender-id"
-        curl -f -s -X DELETE http://localhost:8000/api/tenders/test-tender-id \
-          -H "$AUTH_HEADER" | jq ".status" || echo "❌ Tender DELETE failed"
-        
-        # Test tender cleanup endpoint
-        echo "Testing DELETE /api/tenders/cleanup-test-records"
-        curl -f -s -X DELETE http://localhost:8000/api/tenders/cleanup-test-records \
-          -H "$AUTH_HEADER" | jq ".status" || echo "❌ Tender cleanup DELETE failed"
-        
-        # Test tender PDF endpoint
-        echo "Testing GET /api/tenders/test-tender-id/pdf"
-        curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/tenders/test-tender-id/pdf | jq ".status" || echo "❌ Tender PDF GET failed"        echo "Testing POST /api/tenders"
-        curl -f -s -X POST http://localhost:8000/api/tenders \
-          -H "Content-Type: application/json" \
-          -H "$AUTH_HEADER" \
-          -d "{"title":"Test Tender","description":"Test tender description"}" | jq ".status" || echo "❌ Tenders POST failed"          echo "Testing GET /api/project-management/weeks"
+          echo "Testing GET /api/project-management/weeks"
           curl -f -s -H "$AUTH_HEADER" http://localhost:8000/api/project-management/weeks | jq '.status' || echo "❌ Project management weeks GET failed"
         fi
         

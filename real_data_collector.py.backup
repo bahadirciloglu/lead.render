@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 import httpx
-import re
 
 from real_data_config import DATA_QUALITY_STANDARDS, REAL_DATA_SOURCES
 
@@ -35,22 +34,6 @@ class RealDataCollector:
             "google": 1000,  # Google Gemini free tier
         }
 
-
-    def _clean_gpt_response(self, content: str) -> str:
-        """
-        GPT-OSS-20B modelinden gelen yanıtı temizler.
-        'analysis...' ve 'assistantfinal' kısımlarını kaldırır.
-        """
-        import re
-        # 'analysis' ile başlayan kısmı ve 'assistantfinal' kısmını bul ve kaldır
-        match = re.search(r'assistantfinal(.*)', content, re.DOTALL)
-        if match:
-            cleaned_content = match.group(1).strip()
-            # Eğer "analysis" kısmı varsa, onu da temizle
-            if cleaned_content.lower().startswith("analysis"):
-                cleaned_content = re.sub(r'^analysis.*?(?=s*[A-ZÇĞİÖŞÜ])', '', cleaned_content, flags=re.IGNORECASE | re.DOTALL).strip()
-            return cleaned_content
-        return content.strip()  # Eğer pattern bulunamazsa, sadece boşlukları temizle
     async def collect_startup_data(self, filters: Dict, user_message: str = "") -> Dict:
         """Gerçek veri kaynaklarından startup verisi topla"""
 
@@ -168,16 +151,12 @@ class RealDataCollector:
                     result = response.json()
                     content = result["choices"][0]["message"]["content"]
                     print(f"🤖 GPT-OSS-20B Response preview: {content[:300]}...")
-
-                    # GPT-OSS-20B yanıtını temizle
-                    cleaned_content = self._clean_gpt_response(content)
-                    print(f"🧹 Cleaned GPT-OSS-20B Response: {cleaned_content[:200]}...")
                     # Parsing kaldırıldı - direkt LLM yanıtı döndür
                     self._increment_request_count("openrouter")
                     return [
                         {
                             "model": "GPT-OSS-20B",
-                            "llm_response": cleaned_content,
+                            "llm_response": content,
                             "user_question": user_message,
                             "status": "success",
                             "timestamp": datetime.now().isoformat(),
